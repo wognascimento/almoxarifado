@@ -26,12 +26,35 @@
             VerticalContentAlignment="Center">
 
             <syncfusion:MenuItemAdv Header="Cadastro">
+                <syncfusion:MenuItemAdv Header="Bolsa"/>
+                <syncfusion:MenuItemAdv Header="Bolsa Fixa"/>
             </syncfusion:MenuItemAdv>
 
             <syncfusion:MenuItemAdv Header="Movimentações">
+
+                <syncfusion:MenuItemAdv Header="Saída"/>
+                <syncfusion:MenuItemAdv Header="Entrada"/>
+
+                <syncfusion:MenuItemAdv Header="Bolsa de Ferramenta">
+
+                    <syncfusion:MenuItemAdv Header="Saída"/>
+                    <syncfusion:MenuItemAdv Header="Entrada"/>
+
+                </syncfusion:MenuItemAdv>
+                
             </syncfusion:MenuItemAdv>
 
             <syncfusion:MenuItemAdv Header="Consultas">
+                <syncfusion:MenuItemAdv Header="Movimentações de Saída"/>
+                <syncfusion:MenuItemAdv Header="Movimentações de Entrada"/>
+                <syncfusion:MenuItemAdv Header="Saldo Funcionário"/>
+                <syncfusion:MenuItemAdv Header="Ponto de Pedido"/>
+                <syncfusion:MenuItemAdv Header="Bolsa de Ferramenta">
+                    <syncfusion:MenuItemAdv Header="Saída"/>
+                    <syncfusion:MenuItemAdv Header="Entrada"/>
+                    <syncfusion:MenuItemAdv Header="Saldo Colaborador"/>
+                </syncfusion:MenuItemAdv>
+
             </syncfusion:MenuItemAdv>
 
         </syncfusion:MenuAdv>
