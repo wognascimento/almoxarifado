@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>icones\logo.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="icones\configuracao-de-dados-windows-metro-16.png" />
+    <None Remove="icones\icons8-usu_0025c3_0025a1rio-de-g_0025c3_0025aanero-neutro-windows-metro-16.png" />
+    <None Remove="icones\logo.ico" />
+    <None Remove="icones\logo.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="icones\logo.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
+    <PackageReference Include="syncfusion.ui.wpf.net" Version="24.1.41" />
+    <PackageReference Include="Telerik.UI.for.Wpf.70.Xaml" Version="2023.2.718" />
+    <PackageReference Include="Z.EntityFramework.Extensions.EFCore" Version="8.102.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="icones\configuracao-de-dados-windows-metro-16.png" />
+    <Resource Include="icones\icons8-usu_0025c3_0025a1rio-de-g_0025c3_0025aanero-neutro-windows-metro-16.png" />
+    <Resource Include="icones\logo.ico" />
+    <Resource Include="icones\logo.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="DataBase\Model\" />
+  </ItemGroup>
+
+</Project>
