@@ -32,13 +32,13 @@
 
             <syncfusion:MenuItemAdv Header="Movimentações">
 
-                <syncfusion:MenuItemAdv Header="Saída"/>
-                <syncfusion:MenuItemAdv Header="Entrada"/>
+                <syncfusion:MenuItemAdv Header="Saída" Click="OnAlmoxSaidaClick"/>
+                <syncfusion:MenuItemAdv Header="Entrada" Click="OnAlmoxEntradaClick"/>
 
                 <syncfusion:MenuItemAdv Header="Bolsa de Ferramenta">
 
-                    <syncfusion:MenuItemAdv Header="Saída"/>
-                    <syncfusion:MenuItemAdv Header="Entrada"/>
+                    <syncfusion:MenuItemAdv Header="Saída" Click="OnBolsaSaidaClick"/>
+                    <syncfusion:MenuItemAdv Header="Entrada" Click="OnBolsaEntradaClick"/>
 
                 </syncfusion:MenuItemAdv>
                 
