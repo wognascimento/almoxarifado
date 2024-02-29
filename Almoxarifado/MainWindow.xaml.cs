@@ -92,7 +92,8 @@ namespace Almoxarifado
         {
             InitializeComponent();
             this.Loaded += OnLoaded;
-            StyleManager.ApplicationTheme = new Windows11Theme();
+            //StyleManager.ApplicationTheme = new Windows11Theme() ;
+            //StyleManager.ApplicationTheme = new CrystalTheme();
 
             var appSettings = ConfigurationManager.GetSection("appSettings") as NameValueCollection;
             if (appSettings[0].Length > 0)

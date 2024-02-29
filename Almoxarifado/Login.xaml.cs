@@ -45,7 +45,7 @@ namespace Almoxarifado
                         ConfigurationManager.RefreshSection("appSettings");
                         */
 
-                        Configuration config = ConfigurationManager.OpenExeConfiguration("Producao.dll");
+                        Configuration config = ConfigurationManager.OpenExeConfiguration("Almoxarifado.dll");
 
                         //config.AppSettings.SectionInformation.ConfigSource = "app.config";
 
