@@ -26,5 +26,6 @@ namespace Almoxarifado.DataBase.Model
         public long? num_os { get; set; } 
         public string? endereco { get; set; }
         public long? codcompladicional { get; set; }
+        public long? codfun { get; set; }
     }
 }

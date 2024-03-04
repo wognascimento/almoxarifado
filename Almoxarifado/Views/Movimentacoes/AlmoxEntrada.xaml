@@ -1,12 +1,272 @@
 ﻿<UserControl x:Class="Almoxarifado.Views.Movimentacoes.AlmoxEntrada"
+             xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation" 
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:Almoxarifado.Views.Movimentacoes"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800" Loaded="UserControl_Loaded"   >
     <Grid>
-            
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,5,0,0">
+
+            <StackPanel Orientation="Vertical">
+                <telerik:Label>COD. MOVIMENTO</telerik:Label>
+                <telerik:RadAutoSuggestBox 
+                x:Name="codMovimentacao" 
+                IsEnabled="False" 
+                HorizontalContentAlignment="Center" 
+                ClearButtonVisibility="Collapsed" 
+                QueryButtonVisibility="Collapsed"/>
+            </StackPanel>
+
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0,5,0,0" >
+
+            <StackPanel Orientation="Vertical">
+
+                <telerik:Label>FUNCIONÁRIO</telerik:Label>
+                <telerik:RadMultiColumnComboBox 
+                    x:Name="funcionario" 
+                    Width="530" 
+                    DisplayMemberPath="nome_apelido" 
+                    SelectedItem="{Binding Funcionario}"
+                    CloseDropDownAfterSelectionInput="True" SelectionChanged="OnSelectFuncionario"  >
+                    <telerik:RadMultiColumnComboBox.ItemsSourceProvider>
+                        <telerik:GridViewItemsSourceProvider 
+                            ItemsSource="{Binding Funcionarios}" 
+                            AutoGenerateColumns="False">
+                            <telerik:GridViewItemsSourceProvider.Columns>
+                                <telerik:GridViewDataColumn DataMemberBinding="{Binding codfun}" IsFilterable="False" Header="{x:Null}" />
+                                <telerik:GridViewDataColumn DataMemberBinding="{Binding nome_apelido}" IsFilterable="False" Header="{x:Null}"/>
+                            </telerik:GridViewItemsSourceProvider.Columns>
+                        </telerik:GridViewItemsSourceProvider>
+                    </telerik:RadMultiColumnComboBox.ItemsSourceProvider>
+                </telerik:RadMultiColumnComboBox>
+
+            </StackPanel>
+
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="0,5,0,0" >
+
+            <StackPanel Orientation="Vertical" Width="170" Margin="0,0,5,0">
+                <telerik:Label>ORIGEM</telerik:Label>
+                <telerik:RadComboBox x:Name="origem" ItemsSource="{Binding Origens}"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Vertical" Width="200" Margin="0,0,5,0">
+                <telerik:Label>ATENDENTE</telerik:Label>
+                <telerik:RadComboBox 
+                x:Name="atendentes"
+                ItemsSource="{Binding Atendentes}" 
+                DisplayMemberPath="nome_funcionario"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Vertical" Width="150">
+                <telerik:Label>DATA ENTRADA</telerik:Label>
+                <telerik:RadDateTimePicker x:Name="dtEntrada" InputMode="DatePicker" />
+            </StackPanel>
+
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="0,5,0,0" >
+
+            <StackPanel Orientation="Vertical" Margin="0,0,5,0">
+                <telerik:Label>COD. PRODUTO</telerik:Label>
+                <telerik:RadAutoSuggestBox
+                KeyDown="OnBuscaProduto"
+                Width="150" HorizontalContentAlignment="Center"/>
+            </StackPanel>
+
+            <Image Source="/icones/icons8-pesquisar-40.png" 
+               Width="20" 
+               Height="20" 
+               VerticalAlignment="Bottom" Cursor="Hand" Visibility="Hidden" />
+
+            <StackPanel Orientation="Vertical" Margin="100,0,0,0">
+                <telerik:Label>SALDO ESTOQUE</telerik:Label>
+                <telerik:RadAutoSuggestBox
+                x:Name="txtEstoque"
+                FontWeight="UltraBold" 
+                IsEnabled="False"
+                HorizontalContentAlignment="Center"
+                Width="100" 
+                ClearButtonVisibility="Collapsed" 
+                QueryButtonVisibility="Collapsed"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Vertical" Margin="0,0,0,0">
+                <telerik:Label Visibility="Hidden">QQQ</telerik:Label>
+                <telerik:RadAutoSuggestBox
+                x:Name="txtStatus"
+                FontWeight="UltraBold" 
+                HorizontalContentAlignment="Center"
+                IsEnabled="False" 
+                ClearButtonVisibility="Collapsed" 
+                QueryButtonVisibility="Collapsed"/>
+            </StackPanel>
+
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="4" Margin="0,5,0,0" >
+
+            <StackPanel Orientation="Vertical" Width="200" Margin="0,0,5,0">
+                <telerik:Label>PLANILHA</telerik:Label>
+                <telerik:RadAutoSuggestBox  
+                x:Name="autoCompletePlanilha"  
+                ItemsSource="{Binding Planilhas}" 
+                DisplayMemberPath="planilha"  
+                TextMemberPath="planilha"        
+                WatermarkContent="seleciona a planilha..." 
+                QueryButtonVisibility="Collapsed" 
+                TextChanged="OnFilterPlanilha" 
+                QuerySubmitted="OnPlanilhaQuerySubmitted" 
+                GotFocus="autoCompletePlanilha_GotFocus" />
+            </StackPanel>
+
+            <StackPanel Orientation="Vertical" Width="320" Margin="0,0,5,0">
+                <telerik:Label>DESCRIÇÃO</telerik:Label>
+                <telerik:RadAutoSuggestBox 
+                x:Name="autoCompleteDescricao"  
+                ItemsSource="{Binding Descricoes}"
+                DisplayMemberPath="descricao"  
+                TextMemberPath="descricao"  
+                WatermarkContent="seleciona a descrição..."
+                QueryButtonVisibility="Collapsed"
+                TextChanged="OnFilterDescricoes" 
+                QuerySubmitted="OnDescricaoQuerySubmitted" 
+                GotFocus="autoCompleteDescricao_GotFocus"/>
+            </StackPanel>
+
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="5" Margin="0,5,0,0" >
+
+            <StackPanel Orientation="Vertical" Width="260" Margin="0,0,5,0">
+                <telerik:Label>DESCRIÇÃO ADICIONAL</telerik:Label>
+                <telerik:RadAutoSuggestBox 
+                x:Name="autoCompleteDescricaoAdicional"  
+                ItemsSource="{Binding DescricaoAdicionais}"
+                DisplayMemberPath="descricao_adicional"  
+                TextMemberPath="descricao_adicional"  
+                WatermarkContent="seleciona a descrição adicional..."
+                QueryButtonVisibility="Collapsed"
+                TextChanged="OnFilterDescricaoAdicionais" 
+                QuerySubmitted="OnDescricaoAdicionaisQuerySubmitted" 
+                GotFocus="autoCompleteDescricaoAdicional_GotFocus"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Vertical" Width="260" Margin="0,0,5,0">
+                <telerik:Label>COMPLEMENTO ADICIONAL</telerik:Label>
+                <telerik:RadAutoSuggestBox 
+                x:Name="autoCompleteComplementoAdicional"  
+                ItemsSource="{Binding ComplemntoAdicionais}"
+                DisplayMemberPath="complementoadicional"  
+                TextMemberPath="complementoadicional"  
+                WatermarkContent="seleciona o complemento adicional..."
+                QueryButtonVisibility="Collapsed"
+                TextChanged="OnFilterComplemntoAdicionais" 
+                QuerySubmitted="OnComplemntoAdicionaisQuerySubmitted" 
+                GotFocus="autoCompleteComplementoAdicional_GotFocus"/>
+            </StackPanel>
+
+        </StackPanel>
+        
+        <StackPanel Orientation="Horizontal" Grid.Row="6" Margin="0,5,0,0" >
+
+            <StackPanel Orientation="Vertical" Width="100" Margin="0,0,5,0">
+                <telerik:Label>UNIDADE</telerik:Label>
+                <telerik:RadAutoSuggestBox 
+                x:Name="radMaskedUnidade"
+                Width="100" 
+                IsEnabled="False" 
+                HorizontalContentAlignment="Center" 
+                ClearButtonVisibility="Collapsed" 
+                QueryButtonVisibility="Collapsed"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Vertical" Width="100" Margin="0,0,5,0">
+                <telerik:Label>QUANTIDADE</telerik:Label>
+                <telerik:RadAutoSuggestBox 
+                x:Name="txtQuantidade" 
+                HorizontalContentAlignment="Center" 
+                ClearButtonVisibility="Collapsed" 
+                QueryButtonVisibility="Collapsed"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Vertical" Width="100" Margin="0,0,5,0">
+                <telerik:Label>NUM. O.S.</telerik:Label>
+                <telerik:RadAutoSuggestBox x:Name="ordemServico" 
+                HorizontalContentAlignment="Center" 
+                ClearButtonVisibility="Collapsed" 
+                QueryButtonVisibility="Collapsed"/>
+            </StackPanel>
+
+
+            <StackPanel Orientation="Vertical" Width="100" Margin="0,0,5,0">
+                <telerik:Label>ESTADO</telerik:Label>
+                <telerik:RadComboBox x:Name="estado" ItemsSource="{Binding Estados}"/>
+            </StackPanel>
+
+
+            <StackPanel Orientation="Vertical" Width="100" Margin="0,0,5,0">
+                <telerik:Label>ENDEREÇO</telerik:Label>
+                <telerik:RadAutoSuggestBox x:Name="endereco" 
+                HorizontalContentAlignment="Center" 
+                ClearButtonVisibility="Collapsed" 
+                QueryButtonVisibility="Collapsed" Text="ALM"/>
+            </StackPanel>
+
+            <StackPanel 
+            x:Name="bloq" 
+            Orientation="Vertical" 
+            Margin="0,0,5,0" 
+            Background="Red" 
+            VerticalAlignment="Bottom" Visibility="Collapsed">
+                <telerik:Label 
+                FontWeight="Bold"
+                Content="PRODUTO BLOQUEADO PARA ACERTO DE ESTOQUE."/>
+            </StackPanel>
+
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Height="33" Grid.Row="7" Margin="0,5,0,0" >
+            <telerik:RadButton x:Name="btnGravar" Margin="0,0,5,0" Click="OnGravarClick">GRAVAR</telerik:RadButton>
+            <telerik:RadButton Margin="0,0,2,0" Visibility="Collapsed">IMPRIMIR</telerik:RadButton>
+            <telerik:RadButton Click="OnCodMovimentacao">NOVO MOVIMENTO</telerik:RadButton>
+        </StackPanel>
+
+        <telerik:RadGridView 
+        x:Name="manualGridView" 
+        Margin="0,5,0,5"
+        Grid.Row="10"
+        ItemsSource="{Binding MovSaidaItens}"  
+        ShowGroupPanel="False"
+        AutoGenerateColumns="False" >
+            <telerik:RadGridView.Columns>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding cod_saida_almox}" Header="ID" IsReadOnly="True"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding planilha}" Header="PLANILHA"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding descricao_completa}" Header="DESCRIÇÃO"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding unidade}" Header="UNIDADE"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding qtde}" Header="QTDE"/>
+            </telerik:RadGridView.Columns>
+        </telerik:RadGridView>
+
     </Grid>
 </UserControl>

@@ -1,19 +1,13 @@
 ﻿using Almoxarifado.DataBase;
 using Almoxarifado.DataBase.Model;
 using Microsoft.EntityFrameworkCore;
-using Syncfusion.XlsIO.Implementation.Security;
-using System.Collections;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Telerik.Windows.Controls;
 using Telerik.Windows.Controls.AutoSuggestBox;
-using Telerik.Windows.Documents.Spreadsheet.Expressions.Functions;
-using Telerik.Windows.Persistence.Core;
 
 namespace Almoxarifado.Views.Movimentacoes
 {
@@ -362,6 +356,7 @@ namespace Almoxarifado.Views.Movimentacoes
                     incluido_por = Environment.UserName,
                     data_inclusao = DateTime.Now,
                     funcionario = ((FuncionarioModel)funcionario.SelectedItem).nome_apelido,
+                    codfun = ((FuncionarioModel)funcionario.SelectedItem).codfun,
                     setor = ((FuncionarioModel)funcionario.SelectedItem).setor,
                     unidade = vm.Produto.unidade,
                     num_os = long.Parse(ordemServico.Text),
@@ -755,8 +750,6 @@ namespace Almoxarifado.Views.Movimentacoes
                     throw;
                 }
             });
-
-            
         }
 
         public async Task<BarcodeModel> GetBarcodeAsync(long codigo)
