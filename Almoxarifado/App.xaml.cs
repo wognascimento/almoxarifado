@@ -1,5 +1,7 @@
 ﻿using Almoxarifado.DataBase;
+using Almoxarifado.Localization;
 using System.Windows;
+using Telerik.Windows.Controls;
 
 namespace Almoxarifado
 {
@@ -21,6 +23,11 @@ namespace Almoxarifado
             BaseSettings.Host = "postgresql-server";
             BaseSettings.Username = Environment.UserName;
             BaseSettings.Password = "123mudar";
+
+            LocalizationManager.Manager = new LocalizationManager()
+            {
+                ResourceManager = GridViewResources.ResourceManager
+            };
 
         }
     }

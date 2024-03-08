@@ -1,4 +1,5 @@
 ﻿using Almoxarifado.DataBase;
+using Almoxarifado.Views.Cadastros;
 using Almoxarifado.Views.Movimentacoes;
 using Microsoft.EntityFrameworkCore;
 using Syncfusion.SfSkinManager;
@@ -315,6 +316,11 @@ namespace Almoxarifado
                 Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
                 MessageBox.Show(ex.Message);
             }
+        }
+
+        private void OnCadastroAtendenteClick(object sender, RoutedEventArgs e)
+        {
+            adicionarFilho(new Atendentes(), "CADASTRO DE ATENDENTES", "CADASTRO_ATENDENTE");
         }
     }
 }
