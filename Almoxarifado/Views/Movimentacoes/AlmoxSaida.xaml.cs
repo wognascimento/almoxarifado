@@ -91,18 +91,20 @@ namespace Almoxarifado.Views.Movimentacoes
                     autoCompleteComplementoAdicional.Text = vm.Produto.complementoadicional;
                     radMaskedUnidade.Text = vm.Produto.unidade;
 
-                    var bloqueio = await Task.Run(() => vm.GetVerificaBloqueioAcertoEstoqueAsync(vm.Produto.codcompladicional));
-                    if (bloqueio != null)
+                    if (distino.Text == "ACERTO ESTOQUE")
                     {
-                        bloq.Visibility = Visibility.Visible;
-                        btnGravar.IsEnabled = false;
-                    }else
-                    {
-                        bloq.Visibility = Visibility.Collapsed;
-                        btnGravar.IsEnabled = true;
+                        var bloqueio = await Task.Run(() => vm.GetVerificaBloqueioAcertoEstoqueAsync(vm.Produto.codcompladicional));
+                        if (bloqueio != null)
+                        {
+                            bloq.Visibility = Visibility.Visible;
+                            btnGravar.IsEnabled = false;
+                        }
+                        else
+                        {
+                            bloq.Visibility = Visibility.Collapsed;
+                            btnGravar.IsEnabled = true;
+                        }
                     }
-
-
                 }
                 
             }
@@ -287,17 +289,22 @@ namespace Almoxarifado.Views.Movimentacoes
                 radMaskedUnidade.Text = compAdicional.unidade;
 
                 vm.Produto = await Task.Run(() => vm.GetProdutoAsync(compAdicional.codcompladicional));
-                var bloqueio = await Task.Run(() => vm.GetVerificaBloqueioAcertoEstoqueAsync(vm.Produto.codcompladicional));
-                if (bloqueio != null)
+
+                if(distino.Text == "ACERTO ESTOQUE")
                 {
-                    bloq.Visibility = Visibility.Visible;
-                    btnGravar.IsEnabled = false;
+                    var bloqueio = await Task.Run(() => vm.GetVerificaBloqueioAcertoEstoqueAsync(vm.Produto.codcompladicional));
+                    if (bloqueio != null)
+                    {
+                        bloq.Visibility = Visibility.Visible;
+                        btnGravar.IsEnabled = false;
+                    }
+                    else
+                    {
+                        bloq.Visibility = Visibility.Collapsed;
+                        btnGravar.IsEnabled = true;
+                    }
                 }
-                else
-                {
-                    bloq.Visibility = Visibility.Collapsed;
-                    btnGravar.IsEnabled = true;
-                }
+                
 
                 Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
             }
@@ -340,7 +347,23 @@ namespace Almoxarifado.Views.Movimentacoes
                 if (!validar)
                     return;
 
-                Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = Cursors.Wait; });
+                if (distino.Text == "ACERTO ESTOQUE")
+                {
+                    var bloqueio = await Task.Run(() => vm.GetVerificaBloqueioAcertoEstoqueAsync(vm.Produto.codcompladicional));
+                    if (bloqueio != null)
+                    {
+                        bloq.Visibility = Visibility.Visible;
+                        btnGravar.IsEnabled = false;
+                        return;
+                    }
+                    else
+                    {
+                        bloq.Visibility = Visibility.Collapsed;
+                        btnGravar.IsEnabled = true;
+                    }
+                }
+
+                    Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = Cursors.Wait; });
 
                 var barcode = await Task.Run(() => vm.GetBarcodeAsync((int)vm.Produto.codcompladicional));
                 var saida = new SaidaAlmoxModel 
