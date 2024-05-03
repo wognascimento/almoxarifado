@@ -111,6 +111,7 @@ namespace Almoxarifado.Views.Movimentacoes
                     autoCompleteDescricaoAdicional.Text = vm.Produto.descricao_adicional;
                     autoCompleteComplementoAdicional.Text = vm.Produto.complementoadicional;
                     radMaskedUnidade.Text = vm.Produto.unidade;
+                    txtQuantidade.Focus();
 
                     if (origem.Text == "ACERTO ESTOQUE")
                     {
@@ -776,7 +777,7 @@ namespace Almoxarifado.Views.Movimentacoes
             {
                 using DatabaseContext db = new();
                 var data = await db.ControleAlmoxEstoques
-                    .Where(p => p.bloqueado == "-1")
+                    .Where(p => p.bloqueado == "-1" && p.codcompladicional == codcompladicional)
                     .FirstOrDefaultAsync();
                 return data;
             }

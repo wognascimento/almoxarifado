@@ -46,8 +46,8 @@
             </syncfusion:MenuItemAdv>
 
             <syncfusion:MenuItemAdv Header="Consultas">
-                <syncfusion:MenuItemAdv Header="Movimentações de Saída"/>
-                <syncfusion:MenuItemAdv Header="Movimentações de Entrada"/>
+                <syncfusion:MenuItemAdv Header="Movimentações de Saída" Click="OnMovSaida"/>
+                <syncfusion:MenuItemAdv Header="Movimentações de Entrada" Click="OnMovEntrada"/>
                 <syncfusion:MenuItemAdv Header="Saldo Funcionário" Click="OnSaldoFuncionarioClick"/>
                 <syncfusion:MenuItemAdv Header="Ponto de Pedido" Click="OnPontoPedidoClick"/>
                 <syncfusion:MenuItemAdv Header="Saldo Estoque" Click="OnSaldoEstoqueClick"/>

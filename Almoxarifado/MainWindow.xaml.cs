@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Syncfusion.SfSkinManager;
 using Syncfusion.Windows.Tools.Controls;
 using Syncfusion.XlsIO;
+using Syncfusion.XlsIO.Implementation.Security;
 using System.Collections.Specialized;
 using System.Configuration;
 using System.Diagnostics;
@@ -321,6 +322,119 @@ namespace Almoxarifado
         private void OnCadastroAtendenteClick(object sender, RoutedEventArgs e)
         {
             adicionarFilho(new Atendentes(), "CADASTRO DE ATENDENTES", "CADASTRO_ATENDENTE");
+        }
+
+        private async void OnMovSaida(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = Cursors.Wait; });
+
+                using DatabaseContext db = new();
+                var resultado = (
+                from sa in db.Saidas
+                join qd in db.Descricoes on sa.codcompladicional equals qd.codcompladicional
+                join vf in db.Funcionarios on sa.codfun equals vf.codfun
+                orderby sa.data, vf.nome_apelido, qd.planilha, qd.descricao_completa
+                select new
+                {
+                    sa.cod_movimentacao,
+                    sa.cod_saida_almox,
+                    sa.codfun,
+                    vf.nome_apelido,
+                    vf.setor,
+                    sa.codcompladicional,
+                    qd.planilha,
+                    qd.descricao_completa,
+                    qd.unidade,
+                    sa.qtde,
+                    sa.data,
+                    sa.resp,
+                    sa.obs,
+                    sa.num_os
+                }).ToList();
+
+                using ExcelEngine excelEngine = new ExcelEngine();
+                IApplication application = excelEngine.Excel;
+
+                application.DefaultVersion = ExcelVersion.Xlsx;
+
+                //Create a workbook
+                IWorkbook workbook = application.Workbooks.Create(1);
+                IWorksheet worksheet = workbook.Worksheets[0];
+                //worksheet.IsGridLinesVisible = false;
+                worksheet.ImportData(resultado, 1, 1, true);
+
+                workbook.SaveAs("Impressos/MOVIMENTACOES-SAIDAS.xlsx");
+                Process.Start(new ProcessStartInfo("Impressos\\MOVIMENTACOES-SAIDAS.xlsx")
+                {
+                    UseShellExecute = true
+                });
+
+                Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
+            }
+            catch (Exception ex)
+            {
+                Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private async void OnMovEntrada(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = Cursors.Wait; });
+
+                using DatabaseContext db = new();
+                var resultado = (
+                from sa in db.Entradas
+                join qd in db.Descricoes on sa.codcompladicional equals qd.codcompladicional
+                join vf in db.Funcionarios on sa.codfun equals vf.codfun
+                orderby sa.data, vf.nome_apelido, qd.planilha, qd.descricao_completa
+                select new
+                {
+                    sa.cod_movimentacao,
+                    sa.cod_entrada_almox,
+                    sa.codfun,
+                    vf.nome_apelido,
+                    vf.setor,
+                    sa.codcompladicional,
+                    qd.planilha,
+                    qd.descricao_completa,
+                    qd.unidade,
+                    sa.origem,
+                    sa.qtde,
+                    sa.data,
+                    sa.resp,
+                    sa.obs,
+                    sa.num_os
+                }).ToList();
+
+                using ExcelEngine excelEngine = new ExcelEngine();
+                IApplication application = excelEngine.Excel;
+
+                application.DefaultVersion = ExcelVersion.Xlsx;
+
+                //Create a workbook
+                IWorkbook workbook = application.Workbooks.Create(1);
+                IWorksheet worksheet = workbook.Worksheets[0];
+                //worksheet.IsGridLinesVisible = false;
+                worksheet.ImportData(resultado, 1, 1, true);
+
+                workbook.SaveAs("Impressos/MOVIMENTACOES-SAIDAS.xlsx");
+                Process.Start(new ProcessStartInfo("Impressos\\MOVIMENTACOES-SAIDAS.xlsx")
+                {
+                    UseShellExecute = true
+                });
+
+                Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
+            }
+            catch (Exception ex)
+            {
+                Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
+                MessageBox.Show(ex.Message);
+            }
         }
     }
 }
