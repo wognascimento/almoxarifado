@@ -1,5 +1,6 @@
 ﻿using Almoxarifado.DataBase;
 using Almoxarifado.Views.Cadastros;
+using Almoxarifado.Views.Consultas;
 using Almoxarifado.Views.Movimentacoes;
 using Microsoft.EntityFrameworkCore;
 using Syncfusion.SfSkinManager;
@@ -435,6 +436,11 @@ namespace Almoxarifado
                 Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
                 MessageBox.Show(ex.Message);
             }
+        }
+
+        private void OnProdutosAlmoxarifado(object sender, RoutedEventArgs e)
+        {
+            adicionarFilho(new ProdutoAlmoxarifado(), "PRODUTOS ALMOXARIFADO", "PRODUTOS_ALMOXARIFADO"); //ProdutoAlmoxarifado
         }
     }
 }

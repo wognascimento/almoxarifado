@@ -16,10 +16,18 @@
     <None Remove="icones\icons8-usu_0025c3_0025a1rio-de-g_0025c3_0025aanero-neutro-windows-metro-16.png" />
     <None Remove="icones\logo.ico" />
     <None Remove="icones\logo.png" />
+    <None Remove="TSCLIB.dll" />
+    <None Remove="UL.PCX" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="icones\logo.ico" />
+    <Content Include="TSCLIB.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="UL.PCX">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
