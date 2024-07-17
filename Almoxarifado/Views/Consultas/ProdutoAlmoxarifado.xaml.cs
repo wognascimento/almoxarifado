@@ -159,7 +159,7 @@ namespace Almoxarifado.Views.Consultas
                     //sendcommand("TEXT 100,100,\"3\",0,1,1,\"Hello, World!\"");
                     //sendcommand("BARCODE 100,200,\"128\",100,1,0,2,2,\"1234567890\"");
 
-                    List<string> stringList1 = QuebraString(DESCRICAO.descricao_completa, 28);
+                    List<string> stringList1 = QuebraString(DESCRICAO.descricao_completa.Replace("\"", "''"), 28);
                     byte status = TSCLIB_DLL.usbportqueryprinter();//0 = idle, 1 = head open, 16 = pause, following <ESC>!? command of TSPL manual
                     TSCLIB_DLL.sendcommand("SIZE 47.5 mm, 80.1 mm");
                     TSCLIB_DLL.sendcommand("GAP 3 mm, 0 mm");
