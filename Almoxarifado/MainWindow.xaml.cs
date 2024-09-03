@@ -423,8 +423,8 @@ namespace Almoxarifado
                 //worksheet.IsGridLinesVisible = false;
                 worksheet.ImportData(resultado, 1, 1, true);
 
-                workbook.SaveAs("Impressos/MOVIMENTACOES-SAIDAS.xlsx");
-                Process.Start(new ProcessStartInfo("Impressos\\MOVIMENTACOES-SAIDAS.xlsx")
+                workbook.SaveAs("Impressos/MOVIMENTACOES-ENTRADA.xlsx");
+                Process.Start(new ProcessStartInfo("Impressos\\MOVIMENTACOES-ENTRADA.xlsx")
                 {
                     UseShellExecute = true
                 });
@@ -441,6 +441,11 @@ namespace Almoxarifado
         private void OnProdutosAlmoxarifado(object sender, RoutedEventArgs e)
         {
             adicionarFilho(new ProdutoAlmoxarifado(), "PRODUTOS ALMOXARIFADO", "PRODUTOS_ALMOXARIFADO"); //ProdutoAlmoxarifado
+        }
+
+        private void OnCadastroTerceiro(object sender, RoutedEventArgs e)
+        {
+            adicionarFilho(new Terceiro(), "CADASTRO DE TERCEIROS", "CADASTRO_TERCEIRO");
         }
     }
 }

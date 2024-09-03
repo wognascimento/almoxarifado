@@ -379,9 +379,9 @@ namespace Almoxarifado.Views.Movimentacoes
                     destino = distino.Text,
                     incluido_por = Environment.UserName,
                     data_inclusao = DateTime.Now,
-                    funcionario = ((FuncionarioModel)funcionario.SelectedItem).nome_apelido,
-                    codfun = ((FuncionarioModel)funcionario.SelectedItem).codfun,
-                    setor = ((FuncionarioModel)funcionario.SelectedItem).setor,
+                    funcionario = ((FuncionarioUnionModel)funcionario.SelectedItem).nome,
+                    codfun = ((FuncionarioUnionModel)funcionario.SelectedItem).codfun,
+                    setor = ((FuncionarioUnionModel)funcionario.SelectedItem).setor,
                     unidade = vm.Produto.unidade,
                     num_os = long.Parse(ordemServico.Text),
                     endereco = endereco.Text,
@@ -510,8 +510,8 @@ namespace Almoxarifado.Views.Movimentacoes
             set { _atendentes = value; RaisePropertyChanged("Atendentes"); }
         }
 
-        private ObservableCollection<FuncionarioModel> _funcionarios;
-        public ObservableCollection<FuncionarioModel> Funcionarios
+        private ObservableCollection<FuncionarioUnionModel> _funcionarios;
+        public ObservableCollection<FuncionarioUnionModel> Funcionarios
         {
             get { return _funcionarios; }
             set { _funcionarios = value; RaisePropertyChanged("Funcionarios"); }
@@ -595,13 +595,37 @@ namespace Almoxarifado.Views.Movimentacoes
             }
         }
 
-        public async Task<ObservableCollection<FuncionarioModel>> GetFuncionariosAsync()
+        public async Task<ObservableCollection<FuncionarioUnionModel>> GetFuncionariosAsync()
         {
             try
             {
                 using DatabaseContext db = new();
-                var data = await db.Funcionarios.OrderBy(f => f.nome_apelido).Where(f => f.data_demissao == null).ToListAsync();
-                return new ObservableCollection<FuncionarioModel>(data);
+
+                /*
+                var rh = await db.Funcionarios.OrderBy(f => f.nome_apelido).Where(f => f.data_demissao == null).ToListAsync();
+                var almox = await db.Terceiros.OrderBy(f => f.nome).ToListAsync();
+                */
+
+                var queryRH = db.Funcionarios
+                        .Select(a => new FuncionarioUnionModel
+                        {
+                            codfun = a.codfun,
+                            nome = a.nome_apelido,
+                            setor = a.setor
+                        });
+
+                var queryTerceiro = db.Terceiros
+                        .Select(b => new FuncionarioUnionModel
+                        {
+                            codfun = b.codfun,
+                            nome = b.nome,
+                            setor = "TERCEIRO"
+                        });
+
+                var unionQuery = queryRH.Union(queryTerceiro);
+                var result = await unionQuery.OrderBy(f => f.nome).ToListAsync();
+
+                return new ObservableCollection<FuncionarioUnionModel>(result);
             }
             catch (Exception)
             {

@@ -54,7 +54,7 @@ namespace Almoxarifado.Views.Movimentacoes
                 
                 if (e.AddedItems.Count() == 1)
                 {
-                    FuncionarioModel func = (FuncionarioModel)e.AddedItems[0];
+                    FuncionarioUnionModel func = (FuncionarioUnionModel)e.AddedItems[0];
                     Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = Cursors.Wait; });
                     vm.Planilhas = await Task.Run(() => vm.GetPlanilhasAsync(func.codfun));
                     Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
@@ -562,15 +562,15 @@ namespace Almoxarifado.Views.Movimentacoes
             set { _atendentes = value; RaisePropertyChanged("Atendentes"); }
         }
 
-        private ObservableCollection<FuncionarioModel> _funcionarios;
-        public ObservableCollection<FuncionarioModel> Funcionarios
+        private ObservableCollection<FuncionarioUnionModel> _funcionarios;
+        public ObservableCollection<FuncionarioUnionModel> Funcionarios
         {
             get { return _funcionarios; }
             set { _funcionarios = value; RaisePropertyChanged("Funcionarios"); }
         }
 
-        private FuncionarioModel _funcionario;
-        public FuncionarioModel Funcionario
+        private FuncionarioUnionModel _funcionario;
+        public FuncionarioUnionModel Funcionario
         {
             get { return _funcionario; }
             set { _funcionario = value; RaisePropertyChanged("Funcionario"); }
@@ -653,7 +653,7 @@ namespace Almoxarifado.Views.Movimentacoes
             }
         }
 
-        public async Task<ObservableCollection<FuncionarioModel>> GetFuncionariosAsync()
+        public async Task<ObservableCollection<FuncionarioUnionModel>> GetFuncionariosAsync()
         {
             try
             {
@@ -661,8 +661,27 @@ namespace Almoxarifado.Views.Movimentacoes
 
                 var funcs = db.SaldoFuncionarios.GroupBy(saldo => saldo.codfun).Select(grupo => grupo.Key).ToListAsync();
 
-                var data = await db.Funcionarios.OrderBy(f => f.nome_apelido).Where(x => funcs.Result.Contains(x.codfun)).ToListAsync();
-                return new ObservableCollection<FuncionarioModel>(data);
+                var queryRH = db.Funcionarios
+                       .Select(a => new FuncionarioUnionModel
+                       {
+                           codfun = a.codfun,
+                           nome = a.nome_apelido,
+                           setor = a.setor
+                       });
+
+                var queryTerceiro = db.Terceiros
+                        .Select(b => new FuncionarioUnionModel
+                        {
+                            codfun = b.codfun,
+                            nome = b.nome,
+                            setor = "TERCEIRO"
+                        });
+
+                var unionQuery = queryRH.Union(queryTerceiro);
+                var result = await unionQuery.OrderBy(f => f.nome).Where(x => funcs.Result.Contains(x.codfun)).ToListAsync();
+
+                //var data = await db.Funcionarios.OrderBy(f => f.nome_apelido).Where(x => funcs.Result.Contains(x.codfun)).ToListAsync();
+                return new ObservableCollection<FuncionarioUnionModel>(result);
             }
             catch (Exception)
             {

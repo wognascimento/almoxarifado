@@ -61,13 +61,14 @@
                 
                 <telerik:RadMultiColumnComboBox x:Name="funcionario" 
                     Width="530" 
-                    DisplayMemberPath="nome_apelido" 
+                    DisplayMemberPath="nome" 
                     CloseDropDownAfterSelectionInput="True"  >
                     <telerik:RadMultiColumnComboBox.ItemsSourceProvider>
                         <telerik:GridViewItemsSourceProvider ItemsSource="{Binding Funcionarios}" AutoGenerateColumns="False">
                             <telerik:GridViewItemsSourceProvider.Columns>
                                 <telerik:GridViewDataColumn DataMemberBinding="{Binding codfun}" IsFilterable="False" Header="{x:Null}" />
-                                <telerik:GridViewDataColumn DataMemberBinding="{Binding nome_apelido}" IsFilterable="False" Header="{x:Null}"/>
+                                <telerik:GridViewDataColumn DataMemberBinding="{Binding nome}" IsFilterable="False" Header="{x:Null}"/>
+                                <telerik:GridViewDataColumn DataMemberBinding="{Binding setor}" IsFilterable="False" Header="{x:Null}"/>
                             </telerik:GridViewItemsSourceProvider.Columns>
                         </telerik:GridViewItemsSourceProvider>
                     </telerik:RadMultiColumnComboBox.ItemsSourceProvider>

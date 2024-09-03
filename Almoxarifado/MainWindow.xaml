@@ -27,6 +27,7 @@
 
             <syncfusion:MenuItemAdv Header="Cadastro">
                 <syncfusion:MenuItemAdv Header="Atendentes" Click="OnCadastroAtendenteClick"/>
+                <syncfusion:MenuItemAdv Header="Terceiros" Click="OnCadastroTerceiro"/>
                 <syncfusion:MenuItemAdv Header="Bolsa"/>
                 <syncfusion:MenuItemAdv Header="Bolsa Fixa"/>
             </syncfusion:MenuItemAdv>

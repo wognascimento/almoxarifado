@@ -1,0 +1,133 @@
+﻿<UserControl x:Class="Almoxarifado.Views.Cadastros.Terceiro"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Almoxarifado.Views.Cadastros" 
+             xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation" 
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800" Loaded="UserControl_Loaded">
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+<!--
+        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,5,0,0">
+
+            <StackPanel Orientation="Vertical">
+                <telerik:Label>COD. FUNCIONÁRIO</telerik:Label>
+                <telerik:RadAutoSuggestBox
+                    x:Name="codFuncionario" 
+                    IsEnabled="False" 
+                    HorizontalContentAlignment="Center" 
+                    ClearButtonVisibility="Collapsed" 
+                    QueryButtonVisibility="Collapsed"/>
+            </StackPanel>
+
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0,5,0,0" >
+
+            <StackPanel Orientation="Vertical" Width="320" Margin="0,0,5,0">
+                <telerik:Label>NOME</telerik:Label>
+                <telerik:RadAutoSuggestBox  
+                x:Name="TxtNome"  
+                QueryButtonVisibility="Collapsed"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Vertical" Width="200" Margin="0,0,5,0">
+                <telerik:Label>APELIDO</telerik:Label>
+                <telerik:RadAutoSuggestBox 
+                x:Name="TxtApelido"  
+                QueryButtonVisibility="Collapsed"/>
+            </StackPanel>
+
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="0,5,0,0" >
+
+            <StackPanel Orientation="Vertical" Width="370" Margin="0,0,5,0">
+                <telerik:Label>RAZÃO SOCIAL</telerik:Label>
+                <telerik:RadAutoSuggestBox  
+                x:Name="TxtRazaoSocial"  
+                QueryButtonVisibility="Collapsed"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Vertical" Width="150" Margin="0,0,5,0">
+                <telerik:Label>R.G</telerik:Label>
+                <telerik:RadAutoSuggestBox 
+                x:Name="TxtRG"  
+                QueryButtonVisibility="Collapsed"/>
+            </StackPanel>
+
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="0,5,0,0" >
+
+            <StackPanel Orientation="Vertical" Width="370" Margin="0,0,5,0">
+                <telerik:Label>MUNICIPIO</telerik:Label>
+                <telerik:RadAutoSuggestBox  
+                x:Name="TxtMunicipio"  
+                QueryButtonVisibility="Collapsed"/>
+            </StackPanel>
+
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="4" Margin="0,5,0,0" >
+
+            <StackPanel Orientation="Vertical" Width="520" Margin="0,0,5,0">
+                <telerik:Label>TIPO PRESTAÇÃO DE SERVIÇO</telerik:Label>
+                <telerik:RadAutoSuggestBox  
+                x:Name="TxtPrestacaoServico"  
+                QueryButtonVisibility="Collapsed"/>
+            </StackPanel>
+
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Height="33" Grid.Row="5" Margin="0,5,0,0" >
+            <telerik:RadButton 
+                x:Name="btnGravar" 
+                Margin="0,0,5,0" 
+                Content="GRAVAR"
+                Click="OnGravarClick"/>
+        </StackPanel>
+-->
+        <telerik:RadGridView 
+            x:Name="TerceirosGridView" 
+            Margin="0,5,0,5"
+            Grid.Row="6" 
+            CanUserInsertRows="True"
+            ItemsSource="{Binding Terceiros, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            CurrentItem="{Binding Terceiro, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            IsSynchronizedWithCurrentItem="True"
+            ShowGroupPanel="False"
+            NewRowPosition="Bottom" 
+            GroupRenderMode="Flat" 
+            AutoGenerateColumns="True" 
+            CellValidating="OnCellValidatingDados"
+            RowEditEnded="OnRowInsertDados" CanUserDeleteRows="False">
+            <!--
+            <telerik:RadGridView.Columns>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding cod_saida_almox}" Header="ID" IsReadOnly="True"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding planilha}" Header="PLANILHA"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding descricao_completa}" Header="DESCRIÇÃO"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding unidade}" Header="UNIDADE"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding qtde}" Header="QTDE"/>
+            </telerik:RadGridView.Columns>
+            -->
+        </telerik:RadGridView>
+
+
+
+
+
+    </Grid>
+    
+</UserControl>

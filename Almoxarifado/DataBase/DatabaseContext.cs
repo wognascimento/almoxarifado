@@ -25,6 +25,7 @@ namespace Almoxarifado.DataBase
         }
 
         public DbSet<AtendenteAlmoxModel> AtendentesAlmox { get; set; }
+        public DbSet<TerceiroModel> Terceiros { get; set; }
         public DbSet<FuncionarioModel> Funcionarios { get; set; }
         public DbSet<ProdutoAlmoxModel> ProdutosAlmox { get; set; }
         public DbSet<ControleAlmoxEstoqueModel> ControleAlmoxEstoques { get; set; }
