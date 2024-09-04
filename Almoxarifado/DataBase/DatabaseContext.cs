@@ -41,6 +41,7 @@ namespace Almoxarifado.DataBase
         public DbSet<TabelaDescAdicionalModel> DescAdicionais { get; set; }
         public DbSet<TblComplementoAdicionalModel> ComplementoAdicionais { get; set; }
         public DbSet<QryDescricaoModel> Descricoes { get; set; }
+        public DbSet<EstoqueInicialModel> EstoqueIniciais { get; set; }
         public DbSet<BarcodeModel> Barcodes { get; set; }
     }
 }

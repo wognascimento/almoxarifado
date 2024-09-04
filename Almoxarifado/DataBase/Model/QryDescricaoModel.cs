@@ -26,5 +26,6 @@ namespace Almoxarifado.DataBase.Model
         public long? codigo { get; set; }
         public double? saldo_estoque { get; set; }
         public double? estoque_min { get; set; }
+        public double? estoque_inicial { get; set; }
     }
 }

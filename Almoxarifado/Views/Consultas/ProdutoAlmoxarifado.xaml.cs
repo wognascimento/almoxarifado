@@ -3,26 +3,15 @@ using Almoxarifado.DataBase;
 using Almoxarifado.DataBase.Model;
 using Almoxarifado.Views.Cadastros;
 using Microsoft.EntityFrameworkCore;
-using SharpDX.DirectWrite;
-using System;
-using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore.Storage;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.DirectoryServices.ActiveDirectory;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using Telerik.Windows.Controls;
+using Telerik.Windows.Controls.GridView;
 
 namespace Almoxarifado.Views.Consultas
 {
@@ -213,6 +202,46 @@ namespace Almoxarifado.Views.Consultas
             }
             return stringList;
         }
+
+        private QryDescricaoModel updatedClub;
+        private QryDescricaoModel originalEditedClub = new QryDescricaoModel();
+
+        private async void OnRowInsertDados(object sender, GridViewRowEditEndedEventArgs e)
+        {
+            try
+            {
+                ProdutoAlmoxarifadoViewModel vm = (ProdutoAlmoxarifadoViewModel)DataContext;
+
+                if (e.EditAction == GridViewEditAction.Cancel)
+                {
+                    return;
+                }
+                if (e.EditOperationType == GridViewEditOperationType.Insert)
+                {
+                   
+                    //NewData = {Almoxarifado.DataBase.Model.AtendenteAlmoxModel}
+                }
+                if (e.EditOperationType == GridViewEditOperationType.Edit)
+                {
+                    //Edit the entry to the data base. 
+
+                    this.updatedClub = e.Row.Item as QryDescricaoModel;
+
+                    this.originalEditedClub.estoque_inicial = (double?)e.OldValues["estoque_inicial"];
+
+                    await Task.Run(() => vm.SalvarEstoqueInicialAsync((QryDescricaoModel)e.NewData));
+                }
+            }
+            catch (Exception ex)
+            {
+                this.produtos.Items.EditItem(this.updatedClub);
+                this.updatedClub.estoque_inicial = this.originalEditedClub.estoque_inicial;
+                this.produtos.Items.CommitEdit();
+                this.produtos.Items.Refresh();
+
+                MessageBox.Show(ex.Message);
+            }
+        }
     }
 
     public class ProdutoAlmoxarifadoViewModel : INotifyPropertyChanged
@@ -263,6 +292,39 @@ namespace Almoxarifado.Views.Consultas
         public void myCommand_Execute(object obj)
         {
             MessageBox.Show("The MyCommand has been executed");
+        }
+
+        public async Task SalvarEstoqueInicialAsync(QryDescricaoModel Descricao)
+        {
+            using DatabaseContext db = new();
+            var strategy = db.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
+            {
+                using var transaction = await db.Database.BeginTransactionAsync();
+                try
+                {
+                    var produtoA = await db.EstoqueIniciais.FirstOrDefaultAsync(f => f.codcompladicional == Descricao.codcompladicional);
+                    produtoA.estoque_inicial = Descricao.estoque_inicial;
+
+                    var produtoB = await db.ComplementoAdicionais.FirstOrDefaultAsync(f => f.codcompladicional == Descricao.codcompladicional);
+                    produtoB.estoque_inicial = Descricao.estoque_inicial;
+
+                    await db.EstoqueIniciais.SingleMergeAsync(produtoA);
+                    await db.ComplementoAdicionais.SingleMergeAsync(produtoB);
+
+                    await db.SaveChangesAsync();
+
+                    await transaction.CommitAsync();
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+
+            });
+
+            
         }
     }
 

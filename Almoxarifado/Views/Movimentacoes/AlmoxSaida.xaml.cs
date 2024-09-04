@@ -606,7 +606,7 @@ namespace Almoxarifado.Views.Movimentacoes
                 var almox = await db.Terceiros.OrderBy(f => f.nome).ToListAsync();
                 */
 
-                var queryRH = db.Funcionarios
+                var queryRH = db.Funcionarios.Where(f => f.data_demissao == null)
                         .Select(a => new FuncionarioUnionModel
                         {
                             codfun = a.codfun,

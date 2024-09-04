@@ -17,13 +17,15 @@
             Grid.Row="10"
             ItemsSource="{Binding Produtos}"  
             ShowGroupPanel="False"
-            AutoGenerateColumns="False" >
+            AutoGenerateColumns="False" 
+            RowEditEnded="OnRowInsertDados" >
             <telerik:RadGridView.Columns>
                 <telerik:GridViewDataColumn DataMemberBinding="{Binding codcompladicional}" Header="COD. PRODUTO" IsReadOnly="True"/>
-                <telerik:GridViewDataColumn DataMemberBinding="{Binding planilha}" Header="PLANILHA"/>
-                <telerik:GridViewDataColumn DataMemberBinding="{Binding descricao_completa}" Header="DESCRIÇÃO"/>
-                <telerik:GridViewDataColumn DataMemberBinding="{Binding unidade}" Header="UNIDADE"/>
-                <telerik:GridViewDataColumn DataMemberBinding="{Binding saldo_estoque}" Header="SALDO ESTOQUE"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding planilha}" Header="PLANILHA" IsReadOnly="True"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding descricao_completa}" Header="DESCRIÇÃO" IsReadOnly="True"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding unidade}" Header="UNIDADE" IsReadOnly="True"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding estoque_inicial}" Header="ESTOQUE INICIAL"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding saldo_estoque}" Header="SALDO ESTOQUE" IsReadOnly="True"/>
                 <telerik:GridViewColumn>
                     <telerik:GridViewColumn.CellTemplate>
                         <DataTemplate>

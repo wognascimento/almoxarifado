@@ -95,7 +95,7 @@ namespace Almoxarifado.Views.Cadastros
             }
             catch (Exception ex)
             {
-
+                MessageBox.Show(ex.Message);
             }
 
         }
