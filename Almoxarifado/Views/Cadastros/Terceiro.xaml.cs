@@ -2,22 +2,11 @@
 using Almoxarifado.DataBase.Model;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using Telerik.Windows.Controls.GridView;
 
 namespace Almoxarifado.Views.Cadastros
@@ -74,6 +63,7 @@ namespace Almoxarifado.Views.Cadastros
                     e.ErrorMessage = "Informe o apelido do Terceiro.";
                 }
             }
+            /*
             else if (e.Cell.Column.UniqueName == "razao_social")
             {
                 if (e.NewValue.ToString() == string.Empty)
@@ -82,6 +72,7 @@ namespace Almoxarifado.Views.Cadastros
                     e.ErrorMessage = "Informe a razao_social do Terceiro.";
                 }
             }
+            */
             else if (e.Cell.Column.UniqueName == "rg")
             {
                 if (e.NewValue.ToString() == string.Empty)
@@ -128,7 +119,11 @@ namespace Almoxarifado.Views.Cadastros
                 }
                 if (e.EditOperationType == GridViewEditOperationType.Edit)
                 {
-                    //Edit the entry to the data base. 
+                    var terceiro = await vm.SalvarTerceiroAsync((TerceiroModel)e.NewData);
+                    var updatedObject = (TerceiroModel)this.TerceirosGridView.CurrentItem;
+
+                    this.TerceirosGridView.CurrentItem = terceiro;
+                    TerceirosGridView.Items.Refresh();
                 }
             }
             catch (PostgresException ex)

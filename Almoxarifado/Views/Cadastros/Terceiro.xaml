@@ -110,18 +110,20 @@
             ShowGroupPanel="False"
             NewRowPosition="Bottom" 
             GroupRenderMode="Flat" 
-            AutoGenerateColumns="True" 
+            AutoGenerateColumns="False" 
             CellValidating="OnCellValidatingDados"
             RowEditEnded="OnRowInsertDados" CanUserDeleteRows="False">
-            <!--
+            
             <telerik:RadGridView.Columns>
-                <telerik:GridViewDataColumn DataMemberBinding="{Binding cod_saida_almox}" Header="ID" IsReadOnly="True"/>
-                <telerik:GridViewDataColumn DataMemberBinding="{Binding planilha}" Header="PLANILHA"/>
-                <telerik:GridViewDataColumn DataMemberBinding="{Binding descricao_completa}" Header="DESCRIÇÃO"/>
-                <telerik:GridViewDataColumn DataMemberBinding="{Binding unidade}" Header="UNIDADE"/>
-                <telerik:GridViewDataColumn DataMemberBinding="{Binding qtde}" Header="QTDE"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding nome}" Header="NOME"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding apelido}" Header="APELODO"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding razao_social}" Header="RAZÃO SOCIAL"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding rg}" Header="R.G"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding municipio}" Header="MUNICÍPIO"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding tipo_prestacao_servico}" Header="TIPO PRESTAÇÃO SERVIÇO"/>
+                <telerik:GridViewDataColumn DataMemberBinding="{Binding codfun}" Header="CODFUN" IsReadOnly="True"/>
             </telerik:RadGridView.Columns>
-            -->
+            
         </telerik:RadGridView>
 
 
