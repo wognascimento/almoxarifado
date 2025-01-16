@@ -3,9 +3,15 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Almoxarifado.DataBase.Model
 {
-    [Table("view_ht_funcionarios", Schema = "ht")]
+    //[Table("view_ht_funcionarios", Schema = "ht")]
+    [Table("view_funcionarios_terceiros", Schema = "almoxarifado_jac")]
     public class FuncionarioModel
     {
+        [Key]
+        public long? codfun { get; set; }
+        public string? nome_apelido { get; set; }
+        public string? setor { get; set; }
+        /*
         [Key]
         public long? codfun { get; set; }
         public string? nome_apelido { get; set; }
@@ -28,5 +34,6 @@ namespace Almoxarifado.DataBase.Model
         public string? exibir_furo { get; set; }
         public long? codigo_setor { get; set; }
         public string? ocultar_dados { get; set; }
+        */
     }
 }

@@ -1,6 +1,8 @@
 ﻿using Almoxarifado.DataBase;
 using Almoxarifado.DataBase.Model;
 using Microsoft.EntityFrameworkCore;
+using SharpDX;
+using Syncfusion.Linq;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
@@ -379,9 +381,9 @@ namespace Almoxarifado.Views.Movimentacoes
                     destino = distino.Text,
                     incluido_por = Environment.UserName,
                     data_inclusao = DateTime.Now,
-                    funcionario = ((FuncionarioUnionModel)funcionario.SelectedItem).nome,
-                    codfun = ((FuncionarioUnionModel)funcionario.SelectedItem).codfun,
-                    setor = ((FuncionarioUnionModel)funcionario.SelectedItem).setor,
+                    funcionario = ((FuncionarioModel)funcionario.SelectedItem).nome_apelido,
+                    codfun = ((FuncionarioModel)funcionario.SelectedItem).codfun,
+                    setor = ((FuncionarioModel)funcionario.SelectedItem).setor,
                     unidade = vm.Produto.unidade,
                     num_os = long.Parse(ordemServico.Text),
                     endereco = endereco.Text,
@@ -510,8 +512,8 @@ namespace Almoxarifado.Views.Movimentacoes
             set { _atendentes = value; RaisePropertyChanged("Atendentes"); }
         }
 
-        private ObservableCollection<FuncionarioUnionModel> _funcionarios;
-        public ObservableCollection<FuncionarioUnionModel> Funcionarios
+        private ObservableCollection<FuncionarioModel> _funcionarios;
+        public ObservableCollection<FuncionarioModel> Funcionarios
         {
             get { return _funcionarios; }
             set { _funcionarios = value; RaisePropertyChanged("Funcionarios"); }
@@ -595,17 +597,23 @@ namespace Almoxarifado.Views.Movimentacoes
             }
         }
 
-        public async Task<ObservableCollection<FuncionarioUnionModel>> GetFuncionariosAsync()
+        //public async Task<ObservableCollection<FuncionarioUnionModel>> GetFuncionariosAsync()
+        public async Task<ObservableCollection<FuncionarioModel>> GetFuncionariosAsync()
         {
             try
             {
                 using DatabaseContext db = new();
-
+                var result = await db.Funcionarios
+                    .OrderBy(f => f.nome_apelido)
+                    .ThenBy(f => f.setor)
+                    .ToListAsync();
+                return new ObservableCollection<FuncionarioModel>(result);
                 /*
                 var rh = await db.Funcionarios.OrderBy(f => f.nome_apelido).Where(f => f.data_demissao == null).ToListAsync();
                 var almox = await db.Terceiros.OrderBy(f => f.nome).ToListAsync();
                 */
 
+                /*
                 var queryRH = db.Funcionarios.Where(f => f.data_demissao == null)
                         .Select(a => new FuncionarioUnionModel
                         {
@@ -626,6 +634,7 @@ namespace Almoxarifado.Views.Movimentacoes
                 var result = await unionQuery.OrderBy(f => f.nome).ToListAsync();
 
                 return new ObservableCollection<FuncionarioUnionModel>(result);
+                */
             }
             catch (Exception)
             {
