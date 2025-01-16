@@ -679,7 +679,7 @@ namespace Almoxarifado.Views.Movimentacoes
                 */
                 var data = await db.Relplans
                     .OrderBy(planilha => planilha.planilha)
-                    .Where(planilha => planilha.planilha.StartsWith("ALMO") && planilha.ativo.Contains("1"))
+                    .Where(planilha => (planilha.planilha.StartsWith("ALMO") || planilha.planilha == "ESTOQUE TI") && planilha.ativo.Contains("1"))
                     .ToListAsync();
 
                 return new ObservableCollection<RelplanModel>(data);

@@ -280,7 +280,11 @@ namespace Almoxarifado.Views.Consultas
             try
             {
                 using DatabaseContext db = new();
-                var data = await db.Descricoes.OrderBy(c => c.planilha).ThenBy(c => c.descricao).Where(c => c.planilha.Contains("ALMOX") && c.inativo.Contains("0")).ToListAsync();
+                var data = await db.Descricoes
+                    .OrderBy(c => c.planilha)
+                    .ThenBy(c => c.descricao)
+                    .Where(c => (c.planilha.Contains("ALMOX") || c.planilha == "ESTOQUE TI") && c.inativo.Contains("0"))
+                    .ToListAsync();
                 return new ObservableCollection<QryDescricaoModel>(data);
             }
             catch (Exception)

@@ -695,8 +695,17 @@ namespace Almoxarifado.Views.Movimentacoes
             {
                 using DatabaseContext db = new();
 
-                var produtos = await db.SaldoFuncionarios.Where(where => where.codfun == codfun).GroupBy(saldo => saldo.codcompladicional).Select(grupo => grupo.Key).ToListAsync();
-                var planilhas = await db.Descricoes.Where(where => produtos.Contains(where.codcompladicional)).GroupBy(desc => desc.planilha).Select(grupo => grupo.Key).ToListAsync();
+                var produtos = await db.SaldoFuncionarios
+                    .Where(where => where.codfun == codfun)
+                    .GroupBy(saldo => saldo.codcompladicional)
+                    .Select(grupo => grupo.Key)
+                    .ToListAsync();
+
+                var planilhas = await db.Descricoes
+                    .Where(where => produtos.Contains(where.codcompladicional))
+                    .GroupBy(desc => desc.planilha)
+                    .Select(grupo => grupo.Key)
+                    .ToListAsync();
 
                 var data = await db.Relplans
                     .OrderBy(planilha => planilha.planilha)
