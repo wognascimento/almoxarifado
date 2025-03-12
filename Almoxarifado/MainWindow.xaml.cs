@@ -447,5 +447,40 @@ namespace Almoxarifado
         {
             adicionarFilho(new Terceiro(), "CADASTRO DE TERCEIROS", "CADASTRO_TERCEIRO");
         }
+
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = Cursors.Wait; });
+                using DatabaseContext db = new();
+                await db.Database.ExecuteSqlRawAsync(@"
+                    INSERT INTO almoxarifado_jac.t_estoqueinicial (codcompladicional, estoque_inicial, estoque_inicial_processado)
+                    SELECT p.codcompladicional, 0, 0
+                    FROM almoxarifado_jac.qry_descricoes_produtos p
+                    LEFT JOIN almoxarifado_jac.t_estoqueinicial e 
+                        ON p.codcompladicional = e.codcompladicional
+                    WHERE e.codcompladicional IS NULL;
+                ");
+
+                await db.Database.ExecuteSqlRawAsync(@"
+                    INSERT INTO almoxarifado_jac.t_barcodes_almox (barcode, codigo, impresso, compra)
+                    SELECT b.barcode, b.codigo, b.impresso, b.compra
+                    FROM (almoxarifado_jac.qry_descricoes_produtos p
+                    LEFT JOIN producao.tbl_barcodes b 
+                        ON p.codcompladicional = b.codigo)
+                    LEFT JOIN almoxarifado_jac.t_barcodes_almox a 
+                        ON b.barcode = a.barcode
+                    WHERE a.codigo IS NULL;
+                ");
+
+                Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
+            }
+            catch (DbUpdateException ex)
+            {
+                Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
+                MessageBox.Show(ex.Message);
+            }
+        }
     }
 }

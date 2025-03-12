@@ -7,7 +7,7 @@
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
         mc:Ignorable="d"
         Title="SISTEMA INTEGRADO DE GERENCIAMENTO - ALMOXARIFADO"
-        Height="450" Width="800" WindowState="Maximized">
+        Height="450" Width="800" WindowState="Maximized" Loaded="Window_Loaded">
 
 
     <Grid>
