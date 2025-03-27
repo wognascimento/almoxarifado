@@ -111,7 +111,7 @@ namespace Almoxarifado.Views.Consultas
             try
             {
                 // Endereço IP e porta da impressora
-                string printerIP = "TSC TTP-244CE";
+                string printerIP = "192.168.0.116";
                 string port = "9100"; // Porta padrão para impressoras de rede
 
                 // Combina o IP e a porta para o método openport
