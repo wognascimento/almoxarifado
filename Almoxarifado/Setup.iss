@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Almoxarifado S.I.G."
-#define MyAppVersion "1.0.0.0"
+#define MyAppVersion "1.0.0.1"
 #define MyAppPublisher "Cipolatti, Inc."
 #define MyAppURL "https://www.cipolatti.com.br.com.br/"
 #define MyAppExeName "almoxarifado.exe"
@@ -35,7 +35,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 ChangesAssociations=yes
 DisableProgramGroupPage=yes
 ; Uncomment the following line to run in non administrative install mode (install for current user only).
-;PrivilegesRequired=lowest
+PrivilegesRequired=lowest
 OutputBaseFilename=Almoxarifado
 SetupIconFile=icones\logo.ico
 SolidCompression=yes

@@ -2,6 +2,7 @@
 using Almoxarifado.Localization;
 using BibliotecasSIG;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net.Http;
 using System.Reflection;
 using System.Text.Json;
@@ -32,6 +33,7 @@ namespace Almoxarifado
             BaseSettings.Host = "192.168.0.23";
             BaseSettings.Username = Environment.UserName;
             BaseSettings.Password = "123mudar";
+            BaseSettings.ConnectionString = $"Host={BaseSettings.Host};Database={BaseSettings.Database};Username={BaseSettings.Username};Password={BaseSettings.Password}";
 
             LocalizationManager.Manager = new LocalizationManager()
             {
@@ -42,6 +44,14 @@ namespace Almoxarifado
 
         protected override async void OnStartup(StartupEventArgs e)
         {
+            //CultureInfo cultura = new("pt-BR");
+            //CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("pt-BR");
+            //CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("pt-BR");
+
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("pt-BR");
+            Thread.CurrentThread.CurrentUICulture = new CultureInfo("pt-BR");
+
+
             base.OnStartup(e);
 
             // Verificação de atualização em segundo plano

@@ -28,8 +28,8 @@
             <syncfusion:MenuItemAdv Header="Cadastro">
                 <syncfusion:MenuItemAdv Header="Atendentes" Click="OnCadastroAtendenteClick"/>
                 <syncfusion:MenuItemAdv Header="Terceiros" Click="OnCadastroTerceiro"/>
-                <syncfusion:MenuItemAdv Header="Bolsa"/>
-                <syncfusion:MenuItemAdv Header="Bolsa Fixa"/>
+                <syncfusion:MenuItemAdv Header="Bolsa" Click="OnCadastroBolsa"/>
+                <syncfusion:MenuItemAdv Header="Bolsa Fixa" Click="OnCadastroBocaFixa"/>
             </syncfusion:MenuItemAdv>
 
             <syncfusion:MenuItemAdv Header="Movimentações">
@@ -102,6 +102,30 @@
                 <TextBlock x:Name="txtDataBase"/>
             </StatusBarItem>
         </StatusBar>
+
+        <!-- Modal Overlay - Adicionar no final, antes de fechar </Grid> -->
+        <Grid x:Name="ModalOverlay" 
+          Background="#80000000" 
+          Visibility="Collapsed"
+          Panel.ZIndex="10000"
+          MouseDown="ModalOverlay_MouseDown">
+
+            <Canvas x:Name="ModalCanvas">
+                <Border x:Name="ModalContainer"
+                    Background="White"
+                    BorderBrush="#CCCCCC"
+                    BorderThickness="2"
+                    CornerRadius="8"
+                    Visibility="Collapsed">
+                    <Border.Effect>
+                        <DropShadowEffect Color="Black" Direction="315" 
+                                      ShadowDepth="10" Opacity="0.3" BlurRadius="15"/>
+                    </Border.Effect>
+
+                    <ContentPresenter x:Name="ModalContent" />
+                </Border>
+            </Canvas>
+        </Grid>
 
     </Grid>
 

@@ -43,5 +43,10 @@ namespace Almoxarifado.DataBase
         public DbSet<QryDescricaoModel> Descricoes { get; set; }
         public DbSet<EstoqueInicialModel> EstoqueIniciais { get; set; }
         public DbSet<BarcodeModel> Barcodes { get; set; }
+        public DbSet<AprovadoModel> Aprovados { get; set; }
+
+        public DbSet<TipoBolsaModel> TipoBolsas { get; set; }
+        public DbSet<BolsaFixaModel> BolsaFixas { get; set; }
+        public DbSet<BolsaSaidaModel> BolsaSaidas { get; set; }
     }
 }

@@ -4,6 +4,8 @@
              xmlns:local="clr-namespace:Almoxarifado"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+
+        
+
     </Application.Resources>
 </Application>

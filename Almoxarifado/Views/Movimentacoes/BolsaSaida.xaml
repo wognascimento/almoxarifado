@@ -4,9 +4,239 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:Almoxarifado.Views.Movimentacoes"
+             xmlns:converter="clr-namespace:Almoxarifado.Converter"
+             xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="900" Loaded="UserControl_Loaded">
+
+
+    <UserControl.Resources>
+        <converter:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+
+        <!-- Efeito de sombra para modal -->
+        <DropShadowEffect x:Key="ModalShadowEffect"
+                          Color="Black"
+                          Direction="315"
+                          ShadowDepth="10"
+                          Opacity="0.4"
+                          BlurRadius="15"/>
+
+        <!-- Animações -->
+        <Storyboard x:Key="ModalOpenAnimation">
+            <DoubleAnimation Storyboard.TargetName="ModalContainer"
+                             Storyboard.TargetProperty="Opacity"
+                             From="0" To="1" Duration="0:0:0.25"/>
+            <DoubleAnimation Storyboard.TargetName="ModalContainer"
+                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                             From="0.9" To="1" Duration="0:0:0.25"/>
+            <DoubleAnimation Storyboard.TargetName="ModalContainer"
+                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                             From="0.9" To="1" Duration="0:0:0.25"/>
+        </Storyboard>
+
+        <Storyboard x:Key="ModalCloseAnimation">
+            <DoubleAnimation Storyboard.TargetName="ModalContainer"
+                             Storyboard.TargetProperty="Opacity"
+                             From="1" To="0" Duration="0:0:0.2"/>
+        </Storyboard>
+    </UserControl.Resources>
+
+
     <Grid>
+
+        <Grid x:Name="MainContent" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <!-- Para ContentOpcoes -->
+                <ColumnDefinition Width="10"/>
+                <!-- Espaçamento opcional -->
+                <ColumnDefinition Width="*"/>
+                <!-- Para o RadGridView novo -->
+            </Grid.ColumnDefinitions>
+
+            <StackPanel 
+                x:Name="ContentOpcoes" 
+                Orientation="Vertical" 
+                Grid.Row="1" 
+                Grid.Column="0"
+                Margin="0,5,0,0" 
+                HorizontalAlignment="Left">
+
+                <StackPanel Orientation="Vertical">
+                    <telerik:Label>FUNCIONÁRIO</telerik:Label>
+                    <telerik:RadMultiColumnComboBox 
+                        x:Name="funcionarios" 
+                        Width="530" 
+                        DisplayMemberPath="nome_apelido" 
+                        CloseDropDownAfterSelectionInput="True" 
+                        HorizontalAlignment="Left" 
+                        SelectionChanged="funcionarios_SelectionChanged" GotFocus="funcionarios_GotFocus"  >
+                        <telerik:RadMultiColumnComboBox.ItemsSourceProvider>
+                            <telerik:GridViewItemsSourceProvider ItemsSource="{Binding Funcionarios}" AutoGenerateColumns="False">
+                                <telerik:GridViewItemsSourceProvider.Columns>
+                                    <telerik:GridViewDataColumn DataMemberBinding="{Binding codfun}" IsFilterable="False" Header="{x:Null}" />
+                                    <telerik:GridViewDataColumn DataMemberBinding="{Binding nome_apelido}" IsFilterable="False" Header="{x:Null}"/>
+                                    <telerik:GridViewDataColumn DataMemberBinding="{Binding setor}" IsFilterable="False" Header="{x:Null}"/>
+                                </telerik:GridViewItemsSourceProvider.Columns>
+                            </telerik:GridViewItemsSourceProvider>
+                        </telerik:RadMultiColumnComboBox.ItemsSourceProvider>
+                    </telerik:RadMultiColumnComboBox>
+                </StackPanel>
+
+                <StackPanel Orientation="Vertical" Width="530" HorizontalAlignment="Left">
+                    <telerik:Label>TIPO DA BOLSA</telerik:Label>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <telerik:RadComboBox
+                            x:Name="bolsa" 
+                            Grid.Column="0"
+                            ItemsSource="{Binding Bolsas}" 
+                            DisplayMemberPath="descricao"
+                            SelectedValue="codigo_tipobolsa"/>
+                    </Grid>
+                </StackPanel>
+
+                <StackPanel Orientation="Vertical" Width="530" HorizontalAlignment="Left">
+                    <telerik:Label>SIGLAS</telerik:Label>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <telerik:RadComboBox
+                            x:Name="siglas" 
+                            Grid.Column="0"
+                            ItemsSource="{Binding Aprovados}" 
+                            DisplayMemberPath="sigla_serv"
+                            SelectedValue="sigla_serv" 
+                            SelectionChanged="bolsa_SelectionChanged"/>
+
+                            <telerik:RadButton 
+                                x:Name="btnAlterar" 
+                                Grid.Column="2" 
+                                Content="Adicionar Itens Bolsa" 
+                                Click="OnAdicionarItemBolsaClick"/>
+                        </Grid>
+                </StackPanel>
+                
+                
+            </StackPanel>
             
+             <!-- Novo RadGridView ao lado -->
+            <telerik:RadGridView
+                x:Name="SiglaBolsaGrid"
+                Grid.Row="1"
+                Grid.Column="2"
+                AutoGenerateColumns="False"
+                IsReadOnly="True"
+                ItemsSource="{Binding BolsasFuncionario}"
+                CanUserInsertRows="False"
+                ShowGroupPanel="False"
+                Width="400" 
+                HorizontalAlignment="Left">
+                <telerik:RadGridView.Columns>
+                    <telerik:GridViewDataColumn Header="Sigla" DataMemberBinding="{Binding destino_shop}" Width="100"/>
+                    <telerik:GridViewDataColumn Header="Bolsa" DataMemberBinding="{Binding descricao}" Width="*"/>
+                </telerik:RadGridView.Columns>
+            </telerik:RadGridView>
+            
+
+            <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" >
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <!-- Botões -->
+                    <RowDefinition Height="*"/>
+                    <!-- GridView -->
+                </Grid.RowDefinitions>
+
+                <StackPanel Orientation="Horizontal" Grid.Row="0" HorizontalAlignment="Right" Margin="5">
+
+                    <telerik:RadAutoSuggestBox
+                        x:Name="txtCodProduto"
+                        KeyDown="OnBuscaProduto"
+                        QueryButtonVisibility="Collapsed" 
+                        Width="90"/>
+                    <telerik:RadButton x:Name="btnAdicionarItem"
+                        Content="🔍" 
+                        Margin="0,0,5,0"
+                        Click="OnAdicionarItemClick"/>
+                    <telerik:RadButton 
+                        Content="Recibo Bolsa" 
+                        Click="OnImprimirReciboBolsaClick"/>
+                </StackPanel>
+
+                <telerik:RadGridView
+                    Grid.Row="1"
+                    Margin="5"
+                    ItemsSource="{Binding BolsaItens}"
+                    AutoGenerateColumns="False"
+                    CanUserInsertRows="False"
+                    ShowGroupPanel="False"
+                    SelectionUnit="Cell"
+                    CellEditEnded="RadGridView_CellEditEnded">
+                    <telerik:RadGridView.Columns>
+                        <telerik:GridViewDataColumn Header="Planilha" IsReadOnly="True" DataMemberBinding="{Binding planilha}" Width="150"/>
+                        <telerik:GridViewDataColumn Header="Descrição" IsReadOnly="True" DataMemberBinding="{Binding descricao_completa}" Width="*"/>
+                        <telerik:GridViewDataColumn Header="Unidade" IsReadOnly="True" DataMemberBinding="{Binding unidade}" Width="80"/>
+                        <telerik:GridViewDataColumn Header="Qtde" DataMemberBinding="{Binding quantidade}" DataFormatString="{}{0:N2}" Width="60"/>
+                        <telerik:GridViewDataColumn Header="VL. Unit." IsReadOnly="True" DataMemberBinding="{Binding valor_unitario}" DataFormatString="{}{0:C2}" Width="80"/>
+                        <telerik:GridViewDataColumn Header="VL. Total" IsReadOnly="True" DataMemberBinding="{Binding valor_total}" DataFormatString="{}{0:C2}" Width="80"/>
+                    </telerik:RadGridView.Columns>
+                </telerik:RadGridView>
+            </Grid>
+
+            <!-- Overlay de carregamento original -->
+            <!--
+            <Grid Background="#80000000" 
+                  Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="Carregando..." Foreground="White" FontSize="20"
+               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+            -->
+        </Grid>
+
+        <!-- Modal Overlay -->
+        <Grid x:Name="ModalOverlay" 
+              Background="#80000000" 
+              Visibility="Collapsed"
+              Panel.ZIndex="2000"
+              MouseDown="ModalOverlay_MouseDown">
+
+            <!-- Container do modal posicionado -->
+            <Canvas x:Name="ModalCanvas">
+                <Border x:Name="ModalContainer"
+                Background="White"
+                BorderBrush="#DDDDDD"
+                BorderThickness="1"
+                CornerRadius="8"
+                Effect="{StaticResource ModalShadowEffect}"
+                Visibility="Collapsed"
+                RenderTransformOrigin="0.5,0.5">
+
+                    <Border.RenderTransform>
+                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                    </Border.RenderTransform>
+
+                    <!-- Conteúdo da modal -->
+                    <ContentPresenter x:Name="ModalContent" />
+                </Border>
+            </Canvas>
+        </Grid>
+
+
     </Grid>
+
 </UserControl>
