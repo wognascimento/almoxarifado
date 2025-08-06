@@ -818,9 +818,15 @@ public partial class BolsaSaidaViewModel : ObservableObject
                 {
                     var bolsaItens = await dbContext.BolsaFixas
                                                     .Where(c => c.codigo_tipobolsa == codBolsa)
-                                                    .ToListAsync();
+                                                   .ToListAsync();
 
-                    foreach (var item in bolsaItens)
+                    var existingItems = await dbContext.BolsaSaidas
+                                                       .Where(b => b.codigo_bolsa == codBolsa && b.codfun == codFunc)
+                                                       .Select(b => b.codcompladicional)
+                                                       .ToListAsync();
+
+                    var newItems = bolsaItens.Where(item => !existingItems.Contains(item.codcompladicional));
+                    foreach (var item in newItems)
                     {
                         dbContext.BolsaSaidas.Add(new BolsaSaidaModel
                         {

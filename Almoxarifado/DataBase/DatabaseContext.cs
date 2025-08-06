@@ -48,5 +48,6 @@ namespace Almoxarifado.DataBase
         public DbSet<TipoBolsaModel> TipoBolsas { get; set; }
         public DbSet<BolsaFixaModel> BolsaFixas { get; set; }
         public DbSet<BolsaSaidaModel> BolsaSaidas { get; set; }
+        public DbSet<AlmoxarifadoApoioCadeadoModel> ApoioSenhaCadeados { get; set; }
     }
 }

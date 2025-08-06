@@ -1,14 +1,18 @@
 ﻿using Almoxarifado.DataBase;
+using Almoxarifado.DataBase.Model.DTO;
 using Almoxarifado.Interfaces;
 using Almoxarifado.Views.Cadastros;
 using Almoxarifado.Views.Consultas;
 using Almoxarifado.Views.Movimentacoes;
+using Dapper;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Syncfusion.SfSkinManager;
 using Syncfusion.Windows.Tools.Controls;
 using Syncfusion.XlsIO;
 using System.Collections.Specialized;
 using System.Configuration;
+using System.Data;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
@@ -623,5 +627,65 @@ public partial class MainWindow : Window, IModalService
     private void OnCadastroBocaFixa(object sender, RoutedEventArgs e)
     {
         adicionarFilho(new BolsaFixa(), "CADASTRAR ITENS BOLSA", "CADASTRAR_BOLSA_FIXA");
+    }
+
+    private async void OnMovBolsaClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = Cursors.Wait; });
+
+            using DatabaseContext db = new();
+
+            string sql = @"
+               SELECT
+	                f.nome_apelido,
+	                f.setor,
+                    b.cod_controlelinha,
+                    b.codigo_bolsa,
+                    b.codcompladicional,
+                    p.planilha,
+                    p.descricao_completa,
+                    p.unidade,
+                    b.quantidade AS quantidade_saida,   
+                    COALESCE(b.quantidade_retorno, 0) AS quantidade_retorno,
+                    p.custo AS valor_unitario,
+                    (b.quantidade - COALESCE(b.quantidade_retorno, 0)) * p.custo AS saldo_devedor
+                FROM almoxarifado_apoio.tblsaidabolsa AS b
+                JOIN producao.qry3descricoes AS p ON b.codcompladicional = p.codcompladicional
+                JOIN almoxarifado_jac.view_funcionarios_terceiros AS f ON f.codfun = b.codfun
+                ORDER BY f.nome_apelido, f.setor, b.codigo_bolsa, p.planilha, p.descricao_completa;
+            ";
+            using var connection = new NpgsqlConnection(BaseSettings.ConnectionString);
+            await connection.OpenAsync();
+            var resultado = (await connection.QueryAsync<MovimentacaoBolsaDTO>(sql)).ToList();
+            await connection.CloseAsync();
+
+            using ExcelEngine excelEngine = new();
+            IApplication application = excelEngine.Excel;
+            application.DefaultVersion = ExcelVersion.Excel2016;
+
+            //Create a workbook
+            IWorkbook workbook = application.Workbooks.Create(1);
+            IWorksheet worksheet = workbook.Worksheets[0];
+            worksheet.ImportData(resultado, 1, 1, true);
+            workbook.SaveAs(@$"{BaseSettings.CaminhoSistema}Impressos\MOVIMENTACOES-BOLSA.xlsx");
+            Process.Start(new ProcessStartInfo(@$"{BaseSettings.CaminhoSistema}Impressos\MOVIMENTACOES-BOLSA.xlsx")
+            {
+                UseShellExecute = true
+            });
+
+            Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
+        }
+        catch (Exception ex)
+        {
+            Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
+            MessageBox.Show(ex.Message);
+        }
+    }
+
+    private void OnSenhaCadeadoClick(object sender, RoutedEventArgs e)
+    {
+        adicionarFilho(new SenhaCadeado(), "SENHA CADEADO", "SENHA_CADEADO");
     }
 }

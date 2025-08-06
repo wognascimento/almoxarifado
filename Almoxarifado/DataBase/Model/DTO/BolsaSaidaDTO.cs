@@ -15,4 +15,8 @@ public class BolsaSaidaDTO
     public double? quantidade { get; set; }
     public double? valor_unitario { get; set; }
     public double? valor_total { get; set; }
+
+    public double? quantidade_retorno { get; set; }
+    public string? retorno_por { get; set; }
+    public DateTime? retorno_em { get; set; }
 }

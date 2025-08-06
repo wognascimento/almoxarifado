@@ -30,6 +30,7 @@
                 <syncfusion:MenuItemAdv Header="Terceiros" Click="OnCadastroTerceiro"/>
                 <syncfusion:MenuItemAdv Header="Bolsa" Click="OnCadastroBolsa"/>
                 <syncfusion:MenuItemAdv Header="Bolsa Fixa" Click="OnCadastroBocaFixa"/>
+                <syncfusion:MenuItemAdv Header="Senha Cadeado" Click="OnSenhaCadeadoClick"/>
             </syncfusion:MenuItemAdv>
 
             <syncfusion:MenuItemAdv Header="Movimentações">
@@ -53,11 +54,9 @@
                 <syncfusion:MenuItemAdv Header="Saldo Funcionário" Click="OnSaldoFuncionarioClick"/>
                 <syncfusion:MenuItemAdv Header="Ponto de Pedido" Click="OnPontoPedidoClick"/>
                 <syncfusion:MenuItemAdv Header="Saldo Estoque" Click="OnSaldoEstoqueClick"/>
-                <syncfusion:MenuItemAdv Header="Bolsa de Ferramenta">
-                    <syncfusion:MenuItemAdv Header="Saída"/>
-                    <syncfusion:MenuItemAdv Header="Entrada"/>
-                    <syncfusion:MenuItemAdv Header="Saldo Colaborador"/>
-                </syncfusion:MenuItemAdv>
+                <syncfusion:MenuItemAdv Header="Bolsa de Ferramenta" Click="OnMovBolsaClick"/>
+
+
 
             </syncfusion:MenuItemAdv>
 

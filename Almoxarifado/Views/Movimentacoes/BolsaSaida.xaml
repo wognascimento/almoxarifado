@@ -7,7 +7,7 @@
              xmlns:converter="clr-namespace:Almoxarifado.Converter"
              xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="900" Loaded="UserControl_Loaded">
+             d:DesignHeight="450" d:DesignWidth="1000" Loaded="UserControl_Loaded">
 
 
     <UserControl.Resources>
@@ -145,7 +145,7 @@
                 ItemsSource="{Binding BolsasFuncionario}"
                 CanUserInsertRows="False"
                 ShowGroupPanel="False"
-                Width="400" 
+                Width="435" 
                 HorizontalAlignment="Left">
                 <telerik:RadGridView.Columns>
                     <telerik:GridViewDataColumn Header="Sigla" DataMemberBinding="{Binding destino_shop}" Width="100"/>
