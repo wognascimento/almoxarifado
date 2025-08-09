@@ -176,6 +176,9 @@ public partial class BolsaEntrada : UserControl
             return;
 
         var itemBeingEdited = gridView.CurrentCellInfo.Item as BolsaSaidaDTO;
+        itemBeingEdited.retorno_em = DateTime.Now;
+        itemBeingEdited.retorno_por = Environment.UserName;
+
         var columnName = e.Cell.Column.Header.ToString();
         List<string> erros = [];
         BolsaEntradaViewModel vm = (BolsaEntradaViewModel)DataContext;
