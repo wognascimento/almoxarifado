@@ -638,23 +638,27 @@ public partial class MainWindow : Window, IModalService
             using DatabaseContext db = new();
 
             string sql = @"
-               SELECT
-	                f.nome_apelido,
-	                f.setor,
-                    b.cod_controlelinha,
-                    b.codigo_bolsa,
-                    b.codcompladicional,
-                    p.planilha,
-                    p.descricao_completa,
-                    p.unidade,
-                    b.quantidade AS quantidade_saida,   
-                    COALESCE(b.quantidade_retorno, 0) AS quantidade_retorno,
-                    p.custo AS valor_unitario,
-                    (b.quantidade - COALESCE(b.quantidade_retorno, 0)) * p.custo AS saldo_devedor
-                FROM almoxarifado_apoio.tblsaidabolsa AS b
-                JOIN producao.qry3descricoes AS p ON b.codcompladicional = p.codcompladicional
-                JOIN almoxarifado_jac.view_funcionarios_terceiros AS f ON f.codfun = b.codfun
-                ORDER BY f.nome_apelido, f.setor, b.codigo_bolsa, p.planilha, p.descricao_completa;
+              SELECT
+                 f.nome_apelido,
+                 f.setor,
+                 b.cod_controlelinha,
+                 tp.descricao AS bolsa,
+	             b.destino_shop,
+                 b.codcompladicional,
+                 p.planilha,
+                 p.descricao_completa,
+                 p.unidade,
+                 b.quantidade AS quantidade_saida,   
+                 b.quantidade_retorno,
+                 p.custo AS valor_unitario,
+                 (b.quantidade - COALESCE(b.quantidade_retorno, 0)) * p.custo AS saldo_devedor,
+	             b.retorno_por,
+	             b.retorno_em
+             FROM almoxarifado_apoio.tblsaidabolsa AS b
+             JOIN producao.qry3descricoes AS p ON b.codcompladicional = p.codcompladicional
+             JOIN almoxarifado_jac.view_funcionarios_terceiros AS f ON f.codfun = b.codfun
+             JOIN almoxarifado_apoio.tbltipobolsa AS tp ON b.codigo_bolsa = tp.codigo_tipobolsa
+             ORDER BY f.nome_apelido, f.setor, b.codigo_bolsa, p.planilha, p.descricao_completa;
             ";
             using var connection = new NpgsqlConnection(BaseSettings.ConnectionString);
             await connection.OpenAsync();
