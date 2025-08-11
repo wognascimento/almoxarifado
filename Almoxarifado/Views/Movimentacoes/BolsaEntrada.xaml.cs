@@ -114,7 +114,7 @@ public partial class BolsaEntrada : UserControl
             worksheet.Range["A5"].Text = descricaoBolsa.descricao;
             worksheet.Range["D10"].Text = nomeFuncionario;
 
-            int linhaInicial = 7; // Inserir a partir da linha 11
+            int linhaInicial = 8; // Inserir a partir da linha 11
 
             var lista = vm.BolsaItens
                 .Where(b => (b.quantidade_retorno ?? 0) < b.quantidade)
@@ -130,11 +130,11 @@ public partial class BolsaEntrada : UserControl
 
                 worksheet.Range[@$"H{linhaInicial}"].Text = item.unidade;
 
-                worksheet.Range[@$"I{linhaInicial}"].Number = Convert.ToDouble(item.quantidade);
+                worksheet.Range[@$"I{linhaInicial}"].Number = Convert.ToDouble((item.quantidade - Convert.ToDouble(item.quantidade_retorno)));
 
                 worksheet.Range[@$"J{linhaInicial}"].Number = Convert.ToDouble(item.valor_unitario);
 
-                worksheet.Range[@$"K{linhaInicial}"].Number = Convert.ToDouble(item.valor_total);
+                worksheet.Range[@$"K{linhaInicial}"].Number = Convert.ToDouble((item.quantidade - Convert.ToDouble(item.quantidade_retorno)) * item.valor_unitario);
 
                 linhaInicial++;
                 worksheet.InsertRow(linhaInicial, 1, ExcelInsertOptions.FormatAsBefore);

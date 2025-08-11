@@ -231,10 +231,11 @@ public partial class BolsaSaida : UserControl
             IWorkbook workbook = application.Workbooks.Open(inputStream);
             IWorksheet worksheet = workbook.Worksheets[0];
             // Preenche células fixas
-            worksheet.Range["A5"].Text = descricaoBolsa;
+            worksheet.Range["A5"].Text = @$"Prazo máximo para devolução das ferramentas: 31/01/{DateTime.Now.Year+1}";
+            worksheet.Range["A6"].Text = descricaoBolsa;
             worksheet.Range["D10"].Text = nomeFuncionario;
 
-            int linhaInicial = 7; // Inserir a partir da linha 11
+            int linhaInicial = 8; // Inserir a partir da linha 11
 
             foreach (var item in vm.BolsaItens.Where(b => b.quantidade > 0))
             {
