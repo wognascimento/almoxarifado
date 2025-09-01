@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using SharpDX.Direct3D10;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -588,6 +589,44 @@ public partial class BolsaFixa : UserControl
                 }
             }); 
     }
+
+    private async void RadGridView_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        BolsaFixaViewModel vm = (BolsaFixaViewModel)DataContext;
+        List<string> erros = [];
+        if (e.Key == Key.Delete)
+        {
+            var gridView = sender as RadGridView;
+            if (gridView?.SelectedItem != null)
+            {
+                bool DialogResult = false;
+                DialogParameters param = new()
+                {
+                    Content = "Deseja excluir o produto selecionado da bolsa fixa?",
+                    Owner = App.Current.MainWindow
+                };
+                param.Closed += (sender, e) => {
+                    DialogResult = e.DialogResult == true;
+                };
+
+                RadWindow.Confirm(param);
+
+                if (DialogResult)
+                {
+                    string? erro = await vm.DeletarBolsaFixaAsync(gridView.SelectedItem as BolsaFixaDTO);
+                    if (!string.IsNullOrEmpty(erro)) erros.Add(erro);
+                    string? erro1 = await vm.GetBolsaProdutosAsync((gridView.SelectedItem as BolsaFixaDTO).codigo_tipobolsa);
+                    if (!string.IsNullOrEmpty(erro1)) erros.Add(erro1);
+                    if (erros.Count > 0)
+                    {
+                        MessageBox.Show(string.Join("\n\n", erros), "Erro ao carregar dados", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
 }
 
 public partial class BolsaFixaViewModel : ObservableObject
@@ -860,6 +899,31 @@ public partial class BolsaFixaViewModel : ObservableObject
             novaBolsa.codcompladicional = bolsaFixa.codcompladicional;
             novaBolsa.quantidade = bolsaFixa.quantidade ?? 0;
             db.Entry(tipoBolsaExistente).CurrentValues.SetValues(novaBolsa);
+            await db.SaveChangesAsync();
+            return null; // sucesso
+        }
+        catch (NpgsqlException ex) when (ex.InnerException is PostgresException pgEx)
+        {
+            return $"Erro do banco: {pgEx.MessageText}\nLocal: {pgEx.Where}";
+        }
+        catch (Exception ex)
+        {
+            return $"Erro inesperado: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    public async Task<string?> DeletarBolsaFixaAsync(BolsaFixaDTO bolsaFixa)
+    {
+        try
+        {
+            IsBusy = true;
+            using DatabaseContext db = new();
+            var tipoBolsaExistente = await db.BolsaFixas.FindAsync(bolsaFixa.cod_bolsafixa);
+            db.BolsaFixas.Remove(tipoBolsaExistente);
             await db.SaveChangesAsync();
             return null; // sucesso
         }

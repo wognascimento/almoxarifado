@@ -189,7 +189,8 @@
                                  AutoGenerateColumns="False"
                                  CanUserInsertRows="False"
                                  ShowGroupPanel="False"
-                                 MouseDoubleClick="RadGridView_MouseDoubleClick">
+                                 MouseDoubleClick="RadGridView_MouseDoubleClick" 
+                                 PreviewKeyDown="RadGridView_PreviewKeyDown">
                 <telerik:RadGridView.Columns>
                     <telerik:GridViewDataColumn Header="Planilha" DataMemberBinding="{Binding planilha}" Width="150"/>
                     <telerik:GridViewDataColumn Header="Descrição" DataMemberBinding="{Binding descricao_completa}" Width="*"/>
