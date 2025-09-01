@@ -178,6 +178,7 @@ DocProject/Help/html
 
 # Click-Once directory
 publish/
+Output/
 
 # Publish Web Output
 *.[Pp]ublish.xml
@@ -361,3 +362,4 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/Almoxarifado/Output/Almoxarifado.exe
