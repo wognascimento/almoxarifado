@@ -617,6 +617,16 @@ public partial class MainWindow : Window, IModalService
             Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
             MessageBox.Show(ex.Message);
         }
+        catch (InvalidOperationException ex)
+        {
+            Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
+            MessageBox.Show(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
+            MessageBox.Show(ex.Message);
+        }
     }
 
     private void OnCadastroBolsa(object sender, RoutedEventArgs e)
