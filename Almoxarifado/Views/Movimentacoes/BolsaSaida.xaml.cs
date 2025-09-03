@@ -220,6 +220,7 @@ public partial class BolsaSaida : UserControl
     {
         BolsaSaidaViewModel vm = (BolsaSaidaViewModel)DataContext;
         var descricaoBolsa = this.bolsa.SelectedItem is TipoBolsaModel bolsa ? bolsa.descricao : null;
+        var destino = this.siglas.SelectedItem is AprovadoModel sigla ? sigla.sigla_serv : null;
         var nomeFuncionario = this.funcionarios.SelectedItem is FuncionarioModel funcionario ? funcionario.nome_apelido : null;
         try
         {
@@ -232,8 +233,8 @@ public partial class BolsaSaida : UserControl
             IWorksheet worksheet = workbook.Worksheets[0];
             // Preenche células fixas
             worksheet.Range["A5"].Text = @$"Prazo máximo para devolução das ferramentas: 31/01/{DateTime.Now.Year+1}";
-            worksheet.Range["A6"].Text = descricaoBolsa;
-            worksheet.Range["D10"].Text = nomeFuncionario;
+            worksheet.Range["A6"].Text = $"{descricaoBolsa} - {destino}";
+            worksheet.Range["D11"].Text = nomeFuncionario;
 
             int linhaInicial = 8; // Inserir a partir da linha 11
 

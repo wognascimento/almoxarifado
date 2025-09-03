@@ -111,8 +111,8 @@ public partial class BolsaEntrada : UserControl
             IWorkbook workbook = application.Workbooks.Open(inputStream);
             IWorksheet worksheet = workbook.Worksheets[0];
             // Preenche células fixas
-            worksheet.Range["A5"].Text = descricaoBolsa.descricao;
-            worksheet.Range["D10"].Text = nomeFuncionario;
+            worksheet.Range["A5"].Text = $"{descricaoBolsa.descricao} - {descricaoBolsa.destino_shop}";
+            worksheet.Range["D11"].Text = nomeFuncionario;
 
             int linhaInicial = 8; // Inserir a partir da linha 11
 
