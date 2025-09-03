@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Markup;
 using Telerik.Windows.Controls;
 
 namespace Almoxarifado
@@ -44,12 +45,17 @@ namespace Almoxarifado
 
         protected override async void OnStartup(StartupEventArgs e)
         {
-            //CultureInfo cultura = new("pt-BR");
-            //CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("pt-BR");
-            //CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("pt-BR");
+            var culture = new CultureInfo("pt-BR");
 
-            Thread.CurrentThread.CurrentCulture = new CultureInfo("pt-BR");
-            Thread.CurrentThread.CurrentUICulture = new CultureInfo("pt-BR");
+            // Define cultura padrão para todas as threads
+            CultureInfo.DefaultThreadCurrentCulture = culture;
+            CultureInfo.DefaultThreadCurrentUICulture = culture;
+
+            // Faz o WPF usar essa cultura para Bindings (números/datas)
+            FrameworkElement.LanguageProperty.OverrideMetadata(
+                typeof(FrameworkElement),
+                new FrameworkPropertyMetadata(
+                    XmlLanguage.GetLanguage(culture.IetfLanguageTag)));
 
 
             base.OnStartup(e);

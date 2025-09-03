@@ -6,7 +6,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using SharpDX.Direct3D10;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -27,11 +26,13 @@ public partial class BolsaFixa : UserControl
 {
     private ProductSearchModal _currentModal;
     private Window _parentWindow;
+    private readonly DataBaseSettings _dataBaseSettings;
 
     public BolsaFixa()
     {
         InitializeComponent();
         DataContext = new BolsaFixaViewModel();
+        _dataBaseSettings = DataBaseSettings.Instance;
     }
 
     private async void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -627,9 +628,29 @@ public partial class BolsaFixa : UserControl
         }
     }
 
-    private void RadGridView_CellEditEnded(object sender, GridViewCellEditEndedEventArgs e)
+    private async void RadGridView_CellEditEnded(object sender, GridViewCellEditEndedEventArgs e)
     {
+        var linha = e.Cell.DataContext as BolsaFixaDTO;
+        try
+        {
+            //using var connection = new NpgsqlConnection(_connectionString);
+            using var connection = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            string sql = @"
+                UPDATE comercial.tblcustodescadicional
+                SET custo = @custo
+                WHERE codcompladicional = @codcompladicional;
+            ";
 
+            var rowsAffected = await connection.ExecuteAsync(sql, new
+            {
+                custo = linha.valor_unitario,
+                linha.codcompladicional
+            });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erro ao atualizar custo: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 }
 
