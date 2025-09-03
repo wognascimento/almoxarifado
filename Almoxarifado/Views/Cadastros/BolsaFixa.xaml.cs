@@ -627,6 +627,10 @@ public partial class BolsaFixa : UserControl
         }
     }
 
+    private void RadGridView_CellEditEnded(object sender, GridViewCellEditEndedEventArgs e)
+    {
+
+    }
 }
 
 public partial class BolsaFixaViewModel : ObservableObject

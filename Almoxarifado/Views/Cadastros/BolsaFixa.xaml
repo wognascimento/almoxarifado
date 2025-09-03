@@ -184,20 +184,19 @@
 
             <!-- Grid de Itens -->
             <telerik:RadGridView Grid.Row="2" 
-                                 IsReadOnly="True"
                                  ItemsSource="{Binding BolsaFixas}"
                                  AutoGenerateColumns="False"
                                  CanUserInsertRows="False"
                                  ShowGroupPanel="False"
                                  MouseDoubleClick="RadGridView_MouseDoubleClick" 
-                                 PreviewKeyDown="RadGridView_PreviewKeyDown">
+                                 PreviewKeyDown="RadGridView_PreviewKeyDown" CellEditEnded="RadGridView_CellEditEnded">
                 <telerik:RadGridView.Columns>
-                    <telerik:GridViewDataColumn Header="Planilha" DataMemberBinding="{Binding planilha}" Width="150"/>
-                    <telerik:GridViewDataColumn Header="Descrição" DataMemberBinding="{Binding descricao_completa}" Width="*"/>
-                    <telerik:GridViewDataColumn Header="Unidade" DataMemberBinding="{Binding unidade}" Width="80"/>
-                    <telerik:GridViewDataColumn Header="Qtde" DataMemberBinding="{Binding quantidade}" DataFormatString="{}{0:N2}" Width="60"/>
-                    <telerik:GridViewDataColumn Header="VL. Unit." DataMemberBinding="{Binding valor_unitario}" DataFormatString="{}{0:C2}" Width="80"/>
-                    <telerik:GridViewDataColumn Header="VL. Total" DataMemberBinding="{Binding valor_total}" DataFormatString="{}{0:C2}" Width="80"/>
+                    <telerik:GridViewDataColumn IsReadOnly="True" Header="Planilha" DataMemberBinding="{Binding planilha}" Width="150"/>
+                    <telerik:GridViewDataColumn IsReadOnly="True" Header="Descrição" DataMemberBinding="{Binding descricao_completa}" Width="*"/>
+                    <telerik:GridViewDataColumn IsReadOnly="True" Header="Unidade" DataMemberBinding="{Binding unidade}" Width="80"/>
+                    <telerik:GridViewDataColumn IsReadOnly="True" Header="Qtde" DataMemberBinding="{Binding quantidade}" DataFormatString="{}{0:N2}" Width="60"/>
+                    <telerik:GridViewDataColumn IsReadOnly="False" Header="VL. Unit." DataMemberBinding="{Binding valor_unitario}" DataFormatString="{}{0:C2}" Width="80"/>
+                    <telerik:GridViewDataColumn IsReadOnly="True" Header="VL. Total" DataMemberBinding="{Binding valor_total}" DataFormatString="{}{0:C2}" Width="80"/>
                     <!--<telerik:GridViewDataColumn Header="Observação" DataMemberBinding="{Binding Observacao}" Width="200"/>-->
                 </telerik:RadGridView.Columns>
             </telerik:RadGridView>
