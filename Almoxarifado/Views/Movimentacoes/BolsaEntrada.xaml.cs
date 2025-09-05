@@ -7,14 +7,17 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Syncfusion.ExcelToPdfConverter;
 using Syncfusion.Pdf;
+using Syncfusion.PMML;
 using Syncfusion.XlsIO;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using Telerik.Windows.Controls;
+using Telerik.Windows.Controls.GridView;
 
 namespace Almoxarifado.Views.Movimentacoes;
 
@@ -68,7 +71,9 @@ public partial class BolsaEntrada : UserControl
 
     private async void SiglaBolsaGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
-        var bolsa = SiglaBolsaGrid.Items.CurrentItem as BolsaSaidaFuncDestinoDTO;
+        //var bolsa = SiglaBolsaGrid.Items.CurrentItem as BolsaSaidaFuncDestinoDTO;
+        var row = (e.OriginalSource as FrameworkElement)?.ParentOfType<GridViewRow>();
+        var bolsa = row.Item as BolsaSaidaFuncDestinoDTO;
 
         //var codBolsa = this.bolsa.SelectedItem is TipoBolsaModel bolsa ? bolsa.codigo_tipobolsa : null;
         //var codFunc = funcionarios.SelectedItem is FuncionarioModel funcionario ? funcionario.codfun : null;
@@ -101,6 +106,7 @@ public partial class BolsaEntrada : UserControl
         BolsaEntradaViewModel vm = (BolsaEntradaViewModel)DataContext;
         var descricaoBolsa = SiglaBolsaGrid.Items.CurrentItem as BolsaSaidaFuncDestinoDTO;
         var nomeFuncionario = this.funcionarios.SelectedItem is FuncionarioModel funcionario ? funcionario.nome_apelido : null;
+        var codFuncionario = this.funcionarios.SelectedItem is FuncionarioModel f ? f.codfun : null;
         try
         {
             using ExcelEngine excelEngine = new();
@@ -112,7 +118,7 @@ public partial class BolsaEntrada : UserControl
             IWorksheet worksheet = workbook.Worksheets[0];
             // Preenche células fixas
             worksheet.Range["A5"].Text = $"{descricaoBolsa.descricao} - {descricaoBolsa.destino_shop}";
-            worksheet.Range["D11"].Text = nomeFuncionario;
+            worksheet.Range["E11"].Text = nomeFuncionario;
 
             int linhaInicial = 8; // Inserir a partir da linha 11
 
@@ -122,26 +128,28 @@ public partial class BolsaEntrada : UserControl
 
             foreach (var item in lista)
             {
-                worksheet.Range[@$"A{linhaInicial}:B{linhaInicial}"].Merge();
-                worksheet.Range[@$"A{linhaInicial}:B{linhaInicial}"].Text = item.planilha;
+                worksheet.Range[@$"A{linhaInicial}"].Number = Convert.ToDouble(item.codcompladicional);
 
-                worksheet.Range[@$"C{linhaInicial}:G{linhaInicial}"].Merge();
-                worksheet.Range[@$"C{linhaInicial}:G{linhaInicial}"].Text = item?.descricao_completa?.Replace("ÚNICO", null);
+                worksheet.Range[@$"B{linhaInicial}:C{linhaInicial}"].Merge();
+                worksheet.Range[@$"B{linhaInicial}:C{linhaInicial}"].Text = item.planilha;
 
-                worksheet.Range[@$"H{linhaInicial}"].Text = item.unidade;
+                worksheet.Range[@$"D{linhaInicial}:H{linhaInicial}"].Merge();
+                worksheet.Range[@$"D{linhaInicial}:H{linhaInicial}"].Text = item?.descricao_completa?.Replace("ÚNICO", null);
 
-                worksheet.Range[@$"I{linhaInicial}"].Number = Convert.ToDouble((item.quantidade - Convert.ToDouble(item.quantidade_retorno)));
+                worksheet.Range[@$"I{linhaInicial}"].Text = item.unidade;
 
-                worksheet.Range[@$"J{linhaInicial}"].Number = Convert.ToDouble(item.valor_unitario);
+                worksheet.Range[@$"J{linhaInicial}"].Number = Convert.ToDouble(item.quantidade);
 
-                worksheet.Range[@$"K{linhaInicial}"].Number = Convert.ToDouble((item.quantidade - Convert.ToDouble(item.quantidade_retorno)) * item.valor_unitario);
+                worksheet.Range[@$"K{linhaInicial}"].Number = Convert.ToDouble(item.valor_unitario);
+
+                worksheet.Range[@$"L{linhaInicial}"].Number = Convert.ToDouble(item.valor_total);
 
                 linhaInicial++;
                 worksheet.InsertRow(linhaInicial, 1, ExcelInsertOptions.FormatAsBefore);
             }
 
             linhaInicial += 1;
-            worksheet.Range[@$"K{linhaInicial}"].Formula = $"SUM(K7:K{linhaInicial - 1})";
+            worksheet.Range[@$"L{linhaInicial}"].Formula = $"SUM(L7:L{linhaInicial - 1})";
 
             // Cria o conversor
             ExcelToPdfConverter converter = new(workbook);
@@ -154,7 +162,7 @@ public partial class BolsaEntrada : UserControl
             PdfDocument pdfDocument = converter.Convert(settings);
 
             // Salva o PDF
-            using (FileStream outputStream = new(@$"{BaseSettings.CaminhoSistema}Impressos\RECIBO_RETORNO-{nomeFuncionario}-{descricaoBolsa}.PDF", FileMode.Create, FileAccess.Write))
+            using (FileStream outputStream = new(@$"{BaseSettings.CaminhoSistema}Impressos\RECIBO_RETORNO-{codFuncionario}-{descricaoBolsa.codigo_bolsa}.PDF", FileMode.Create, FileAccess.Write))
             {
                 pdfDocument.Save(outputStream);
             }
@@ -162,7 +170,7 @@ public partial class BolsaEntrada : UserControl
             workbook.Close();
             inputStream.Close();
             pdfDocument.Close(true);
-            Process.Start("explorer", @$"{BaseSettings.CaminhoSistema}Impressos\RECIBO_RETORNO-{nomeFuncionario}-{descricaoBolsa}.PDF");
+            Process.Start("explorer", @$"{BaseSettings.CaminhoSistema}Impressos\RECIBO_RETORNO-{codFuncionario}-{descricaoBolsa.codigo_bolsa}.PDF");
         }
         catch (Exception ex)
         {
@@ -170,7 +178,7 @@ public partial class BolsaEntrada : UserControl
         }
     }
 
-    private async void RadGridView_CellEditEnded(object sender, Telerik.Windows.Controls.GridViewCellEditEndedEventArgs e)
+    private async void RadGridView_CellEditEnded(object sender, GridViewCellEditEndedEventArgs e)
     {
         if (sender is not RadGridView gridView)
             return;

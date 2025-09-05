@@ -191,6 +191,7 @@
                                  MouseDoubleClick="RadGridView_MouseDoubleClick" 
                                  PreviewKeyDown="RadGridView_PreviewKeyDown" CellEditEnded="RadGridView_CellEditEnded">
                 <telerik:RadGridView.Columns>
+                    <telerik:GridViewDataColumn IsReadOnly="True" Header="#" DataMemberBinding="{Binding codcompladicional}"/>
                     <telerik:GridViewDataColumn IsReadOnly="True" Header="Planilha" DataMemberBinding="{Binding planilha}" Width="150"/>
                     <telerik:GridViewDataColumn IsReadOnly="True" Header="Descrição" DataMemberBinding="{Binding descricao_completa}" Width="*"/>
                     <telerik:GridViewDataColumn IsReadOnly="True" Header="Unidade" DataMemberBinding="{Binding unidade}" Width="80"/>

@@ -149,6 +149,7 @@
                     SelectionUnit="Cell"
                     CellEditEnded="RadGridView_CellEditEnded">
                     <telerik:RadGridView.Columns>
+                        <telerik:GridViewDataColumn Header="#" IsReadOnly="True" DataMemberBinding="{Binding codcompladicional}"/>
                         <telerik:GridViewDataColumn Header="Planilha" IsReadOnly="True" DataMemberBinding="{Binding planilha}" Width="150"/>
                         <telerik:GridViewDataColumn Header="Descrição" IsReadOnly="True" DataMemberBinding="{Binding descricao_completa}" Width="*"/>
                         <telerik:GridViewDataColumn Header="Unidade" IsReadOnly="True" DataMemberBinding="{Binding unidade}" Width="80"/>

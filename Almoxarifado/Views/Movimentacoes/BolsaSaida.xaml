@@ -146,7 +146,7 @@
                 CanUserInsertRows="False"
                 ShowGroupPanel="False"
                 Width="435" 
-                HorizontalAlignment="Left">
+                HorizontalAlignment="Left" MouseDoubleClick="SiglaBolsaGrid_MouseDoubleClick">
                 <telerik:RadGridView.Columns>
                     <telerik:GridViewDataColumn Header="Sigla" DataMemberBinding="{Binding destino_shop}" Width="100"/>
                     <telerik:GridViewDataColumn Header="Bolsa" DataMemberBinding="{Binding descricao}" Width="*"/>
@@ -188,6 +188,7 @@
                     SelectionUnit="Cell"
                     CellEditEnded="RadGridView_CellEditEnded">
                     <telerik:RadGridView.Columns>
+                        <telerik:GridViewDataColumn Header="#" IsReadOnly="True" DataMemberBinding="{Binding codcompladicional}"/>
                         <telerik:GridViewDataColumn Header="Planilha" IsReadOnly="True" DataMemberBinding="{Binding planilha}" Width="150"/>
                         <telerik:GridViewDataColumn Header="Descrição" IsReadOnly="True" DataMemberBinding="{Binding descricao_completa}" Width="*"/>
                         <telerik:GridViewDataColumn Header="Unidade" IsReadOnly="True" DataMemberBinding="{Binding unidade}" Width="80"/>

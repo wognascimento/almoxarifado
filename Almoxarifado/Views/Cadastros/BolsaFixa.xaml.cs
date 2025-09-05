@@ -155,8 +155,6 @@ public partial class BolsaFixa : UserControl
                 MessageBox.Show(string.Join("\n\n", erros), "Erro ao carregar dados", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-
-
         }
     }
 

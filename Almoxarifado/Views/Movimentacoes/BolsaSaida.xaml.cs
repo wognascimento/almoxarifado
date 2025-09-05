@@ -1,6 +1,7 @@
 ﻿using Almoxarifado.DataBase;
 using Almoxarifado.DataBase.Model;
 using Almoxarifado.DataBase.Model.DTO;
+using Almoxarifado.Views.Cadastros;
 using Almoxarifado.Views.Util;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Dapper;
@@ -18,6 +19,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
 using Telerik.Windows.Controls;
+using Telerik.Windows.Controls.GridView;
 using static Almoxarifado.Interfaces.IModalService;
 
 namespace Almoxarifado.Views.Movimentacoes;
@@ -220,8 +222,12 @@ public partial class BolsaSaida : UserControl
     {
         BolsaSaidaViewModel vm = (BolsaSaidaViewModel)DataContext;
         var descricaoBolsa = this.bolsa.SelectedItem is TipoBolsaModel bolsa ? bolsa.descricao : null;
+        var codBolsa = this.bolsa.SelectedItem is TipoBolsaModel b ? b.codigo_tipobolsa : null;
         var destino = this.siglas.SelectedItem is AprovadoModel sigla ? sigla.sigla_serv : null;
         var nomeFuncionario = this.funcionarios.SelectedItem is FuncionarioModel funcionario ? funcionario.nome_apelido : null;
+        var codFuncionario = this.funcionarios.SelectedItem is FuncionarioModel f ? f.codfun : null;
+
+
         try
         {
             using ExcelEngine excelEngine = new();
@@ -234,32 +240,34 @@ public partial class BolsaSaida : UserControl
             // Preenche células fixas
             worksheet.Range["A5"].Text = @$"Prazo máximo para devolução das ferramentas: 31/01/{DateTime.Now.Year+1}";
             worksheet.Range["A6"].Text = $"{descricaoBolsa} - {destino}";
-            worksheet.Range["D11"].Text = nomeFuncionario;
+            worksheet.Range["E11"].Text = nomeFuncionario;
 
             int linhaInicial = 8; // Inserir a partir da linha 11
 
             foreach (var item in vm.BolsaItens.Where(b => b.quantidade > 0))
             {
-                worksheet.Range[@$"A{linhaInicial}:B{linhaInicial}"].Merge();
-                worksheet.Range[@$"A{linhaInicial}:B{linhaInicial}"].Text = item.planilha;
+                worksheet.Range[@$"A{linhaInicial}"].Number = Convert.ToDouble(item.codcompladicional);
 
-                worksheet.Range[@$"C{linhaInicial}:G{linhaInicial}"].Merge();
-                worksheet.Range[@$"C{linhaInicial}:G{linhaInicial}"].Text = item?.descricao_completa?.Replace("ÚNICO", null);
+                worksheet.Range[@$"B{linhaInicial}:C{linhaInicial}"].Merge();
+                worksheet.Range[@$"B{linhaInicial}:C{linhaInicial}"].Text = item.planilha;
 
-                worksheet.Range[@$"H{linhaInicial}"].Text = item.unidade;
+                worksheet.Range[@$"D{linhaInicial}:H{linhaInicial}"].Merge();
+                worksheet.Range[@$"D{linhaInicial}:H{linhaInicial}"].Text = item?.descricao_completa?.Replace("ÚNICO", null);
 
-                worksheet.Range[@$"I{linhaInicial}"].Number = Convert.ToDouble(item.quantidade);
+                worksheet.Range[@$"I{linhaInicial}"].Text = item.unidade;
 
-                worksheet.Range[@$"J{linhaInicial}"].Number = Convert.ToDouble(item.valor_unitario);
+                worksheet.Range[@$"J{linhaInicial}"].Number = Convert.ToDouble(item.quantidade);
 
-                worksheet.Range[@$"K{linhaInicial}"].Number = Convert.ToDouble(item.valor_total);
+                worksheet.Range[@$"K{linhaInicial}"].Number = Convert.ToDouble(item.valor_unitario);
+
+                worksheet.Range[@$"L{linhaInicial}"].Number = Convert.ToDouble(item.valor_total);
 
                 linhaInicial++;
                 worksheet.InsertRow(linhaInicial, 1, ExcelInsertOptions.FormatAsBefore);
             }
 
             linhaInicial += 1;
-            worksheet.Range[@$"K{linhaInicial}"].Formula = $"SUM(K7:K{linhaInicial - 1})";
+            worksheet.Range[@$"L{linhaInicial}"].Formula = $"SUM(L7:L{linhaInicial - 1})";
             // Salva como novo arquivo
             //FileStream outputStream = new(@$"{BaseSettings.CaminhoSistema}Impressos\RECIBO_SAIDA-{nomeFuncionario}-{descricaoBolsa}.xlsx", FileMode.Create, FileAccess.Write);
             //workbook.SaveAs(outputStream);
@@ -275,7 +283,7 @@ public partial class BolsaSaida : UserControl
             PdfDocument pdfDocument = converter.Convert(settings);
 
             // Salva o PDF
-            using (FileStream outputStream = new(@$"{BaseSettings.CaminhoSistema}Impressos\RECIBO_SAIDA-{nomeFuncionario}-{descricaoBolsa}.PDF", FileMode.Create, FileAccess.Write))
+            using (FileStream outputStream = new(@$"{BaseSettings.CaminhoSistema}Impressos\RECIBO_SAIDA-{codFuncionario}-{codBolsa}.PDF", FileMode.Create, FileAccess.Write))
             {
                 pdfDocument.Save(outputStream);
             }
@@ -286,7 +294,7 @@ public partial class BolsaSaida : UserControl
             //outputStream.Close();
 
             //Process.Start("explorer", @$"{BaseSettings.CaminhoSistema}Impressos\RECIBO_SAIDA-{nomeFuncionario}-{descricaoBolsa}.xlsx");
-            Process.Start("explorer", @$"{BaseSettings.CaminhoSistema}Impressos\RECIBO_SAIDA-{nomeFuncionario}-{descricaoBolsa}.PDF");
+            Process.Start("explorer", @$"{BaseSettings.CaminhoSistema}Impressos\RECIBO_SAIDA-{codFuncionario}-{codBolsa}.PDF");
         }
         catch (Exception ex)
         {
@@ -612,6 +620,37 @@ public partial class BolsaSaida : UserControl
         }
     }
 
+    private async void SiglaBolsaGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        BolsaSaidaViewModel vm = (BolsaSaidaViewModel)DataContext;
+
+        var row = (e.OriginalSource as FrameworkElement)?.ParentOfType<GridViewRow>();
+        if (row != null)
+        {
+            vm.BolsaFuncionario = row.Item as BolsaSaidaFuncDestinoDTO;
+            siglas.SelectedItem = vm.Aprovados.FirstOrDefault(a => a.sigla_serv == vm.BolsaFuncionario?.destino_shop);
+            bolsa.SelectedItem = vm.Bolsas.FirstOrDefault(b => b.codigo_tipobolsa == vm.BolsaFuncionario?.codigo_bolsa);
+
+            
+            var codBolsa = this.bolsa.SelectedItem is TipoBolsaModel b ? b.codigo_tipobolsa : null;
+            var func = funcionarios.SelectedItem is FuncionarioModel funcionario ? funcionario.codfun : null;
+            var sigla = siglas.SelectedItem is AprovadoModel aprovado ? aprovado.sigla_serv : null;
+
+
+            List<string> erros = [];
+            string? erro1 = await vm.GetBolsaProdutosAsync(codBolsa, func, sigla);
+            if (!string.IsNullOrEmpty(erro1)) erros.Add(erro1);
+
+            string? erro2 = await vm.CarregarBolsasAsync();
+            if (!string.IsNullOrEmpty(erro2)) erros.Add(erro2);
+
+            if (erros.Count > 0)
+            {
+                MessageBox.Show(string.Join("\n\n", erros), "Erro ao carregar dados", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            
+        }
+    }
 }
 
 public partial class BolsaSaidaViewModel : ObservableObject
@@ -650,6 +689,9 @@ public partial class BolsaSaidaViewModel : ObservableObject
 
     [ObservableProperty]
     private ObservableCollection<BolsaSaidaFuncDestinoDTO> bolsasFuncionario;
+
+    [ObservableProperty]
+    private BolsaSaidaFuncDestinoDTO bolsaFuncionario;
 
 
     public async Task<string?> GetFuncionariosAsync()
