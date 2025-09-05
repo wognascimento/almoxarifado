@@ -7,14 +7,12 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Syncfusion.ExcelToPdfConverter;
 using Syncfusion.Pdf;
-using Syncfusion.PMML;
 using Syncfusion.XlsIO;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
 using Telerik.Windows.Controls;
 using Telerik.Windows.Controls.GridView;
@@ -117,7 +115,7 @@ public partial class BolsaEntrada : UserControl
             IWorkbook workbook = application.Workbooks.Open(inputStream);
             IWorksheet worksheet = workbook.Worksheets[0];
             // Preenche células fixas
-            worksheet.Range["A5"].Text = $"{descricaoBolsa.descricao} - {descricaoBolsa.destino_shop}";
+            worksheet.Range["B5"].Text = $"{descricaoBolsa.descricao} - {descricaoBolsa.destino_shop}";
             worksheet.Range["E11"].Text = nomeFuncionario;
 
             int linhaInicial = 8; // Inserir a partir da linha 11
