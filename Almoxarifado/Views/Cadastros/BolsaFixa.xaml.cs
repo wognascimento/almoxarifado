@@ -546,11 +546,11 @@ public partial class BolsaFixa : UserControl
             MessageBox.Show("Informe o código do produto.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        else if (string.IsNullOrEmpty(txtQuantidade.Text) || !double.TryParse(txtQuantidade.Text, out double quantidade) || quantidade <= 0)
+        /*else if (string.IsNullOrEmpty(txtQuantidade.Text) || !double.TryParse(txtQuantidade.Text, out double quantidade) || quantidade <= 0)
         {
             MessageBox.Show("Informe uma quantidade válida.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
-        }
+        }*/
 
         BolsaFixaViewModel vm = (BolsaFixaViewModel)DataContext;
         List<string> erros = [];

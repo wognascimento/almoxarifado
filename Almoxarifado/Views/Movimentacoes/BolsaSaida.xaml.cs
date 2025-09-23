@@ -865,7 +865,7 @@ public partial class BolsaSaidaViewModel : ObservableObject
                                                    .ToListAsync();
 
                     var existingItems = await dbContext.BolsaSaidas
-                                                       .Where(b => b.codigo_bolsa == codBolsa && b.codfun == codFunc)
+                                                       .Where(b => b.codigo_bolsa == codBolsa && b.codfun == codFunc && b.destino_shop == sigla)
                                                        .Select(b => b.codcompladicional)
                                                        .ToListAsync();
 
