@@ -1,4 +1,5 @@
-﻿using System.Configuration;
+﻿using Almoxarifado.DataBase;
+using System.Configuration;
 using System.DirectoryServices;
 using System.Windows;
 using Telerik.Windows.Controls;
@@ -10,6 +11,8 @@ namespace Almoxarifado
     /// </summary>
     public partial class Login : RadWindow
     {
+        DataBaseSettings BaseSettings = DataBaseSettings.Instance;
+
         public Login()
         {
             InitializeComponent();
@@ -54,7 +57,10 @@ namespace Almoxarifado
 
                         ConfigurationManager.RefreshSection("appSettings");
 
-                        this.DialogResult = true;
+                    BaseSettings.Username = txtLogin.Text;
+                    BaseSettings.ConnectionString = $"Host={BaseSettings.Host};Database={BaseSettings.Database};Username={BaseSettings.Username};Password={BaseSettings.Password}";
+
+                    this.DialogResult = true;
                         this.Close();
                     //}
                     //else

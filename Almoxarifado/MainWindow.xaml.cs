@@ -322,6 +322,7 @@ public partial class MainWindow : Window, IModalService
                 {
                     BaseSettings.Database = e.PromptResult;
                     txtDataBase.Text = BaseSettings.Database;
+                    BaseSettings.ConnectionString = $"Host={BaseSettings.Host};Database={BaseSettings.Database};Username={BaseSettings.Username};Password={BaseSettings.Password}";
                     _mdi.Items.Clear();
                 }
             }
