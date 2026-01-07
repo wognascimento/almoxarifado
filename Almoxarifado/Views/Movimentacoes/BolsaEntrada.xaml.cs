@@ -102,7 +102,8 @@ public partial class BolsaEntrada : UserControl
     private void OnImprimirReciboBolsaClick(object sender, RoutedEventArgs e)
     {
         BolsaEntradaViewModel vm = (BolsaEntradaViewModel)DataContext;
-        var descricaoBolsa = SiglaBolsaGrid.Items.CurrentItem as BolsaSaidaFuncDestinoDTO;
+        //var descricaoBolsa = SiglaBolsaGrid.Items.CurrentItem as BolsaSaidaFuncDestinoDTO;
+        var descricaoBolsa = SiglaBolsaGrid.SelectedItem as BolsaSaidaFuncDestinoDTO;
         var nomeFuncionario = this.funcionarios.SelectedItem is FuncionarioModel funcionario ? funcionario.nome_apelido : null;
         var codFuncionario = this.funcionarios.SelectedItem is FuncionarioModel f ? f.codfun : null;
         try
