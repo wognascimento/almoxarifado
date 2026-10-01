@@ -5,8 +5,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:Almoxarifado.Views.Movimentacoes"
-             xmlns:syncfusion="http://schemas.syncfusion.com/wpf" 
-             xmlns:custom="clr-namespace:Almoxarifado.Custom"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800" Loaded="UserControl_Loaded">
 
@@ -45,20 +43,6 @@
             <StackPanel Orientation="Vertical">
 
                 <telerik:Label>FUNCIONÁRIO</telerik:Label>
-                <!--
-                <custom:CustomMultiColumnControl
-                    AutoGenerateColumns="false"
-                     DisplayMember="nome_apelido"
-                     ValueMember="nome_apelido"
-                     Width="530" 
-                     GridColumnSizer="Star"
-                     ItemsSource="{Binding Funcionarios}">
-                    <custom:CustomMultiColumnControl.Columns>
-                        <syncfusion:GridTextColumn MappingName="nome_apelido" HeaderText="" />
-                    </custom:CustomMultiColumnControl.Columns>
-                </custom:CustomMultiColumnControl>
-                -->
-                
                 <telerik:RadMultiColumnComboBox x:Name="funcionario" 
                     Width="530" 
                     DisplayMemberPath="nome_apelido" 
@@ -82,16 +66,12 @@
 
             <StackPanel Orientation="Vertical" Width="170" Margin="0,0,5,0">
                 <telerik:Label>DESTINO</telerik:Label>
-                <!--<syncfusion:ComboBoxAdv ItemsSource="{Binding Destinos}"/>-->
                 <telerik:RadComboBox x:Name="distino" ItemsSource="{Binding Destinos}"/>
             </StackPanel>
 
 
             <StackPanel Orientation="Vertical" Width="200" Margin="0,0,5,0">
                 <telerik:Label>ATENDENTE</telerik:Label>
-                <!--<syncfusion:ComboBoxAdv
-                    ItemsSource="{Binding Atendentes}" 
-                    DisplayMemberPath="nome_funcionario"/>-->
                 <telerik:RadComboBox 
                     x:Name="atendentes"
                     ItemsSource="{Binding Atendentes}" 
@@ -100,7 +80,6 @@
 
             <StackPanel Orientation="Vertical" Width="150">
                 <telerik:Label>DATA SAÍDA</telerik:Label>
-                <!--<syncfusion:DateTimeEdit />-->
                 <telerik:RadDateTimePicker x:Name="dtSaida" InputMode="DatePicker" />
             </StackPanel>
 
@@ -279,19 +258,6 @@
             <telerik:RadButton Margin="0,0,2,0" Visibility="Collapsed">IMPRIMIR</telerik:RadButton>
             <telerik:RadButton Click="OnCodMovimentacao">NOVO MOVIMENTO</telerik:RadButton>
         </StackPanel>
-
-        <!--
-        <syncfusion:SfDataGrid Grid.Row="10" AutoGenerateColumns="False" Margin="0,5,0,5">
-            <syncfusion:SfDataGrid.Columns>
-                <syncfusion:GridNumericColumn HeaderText="ID"/>
-                <syncfusion:GridTextColumn HeaderText="PLANILHA"/>
-                <syncfusion:GridTextColumn HeaderText="DESCRIÇÃO"/>
-                <syncfusion:GridTextColumn HeaderText="UNIDADE"/>
-                <syncfusion:GridNumericColumn HeaderText="QTDE"/>
-            </syncfusion:SfDataGrid.Columns>
-
-        </syncfusion:SfDataGrid>
-        -->
 
         <telerik:RadGridView 
             x:Name="manualGridView" 

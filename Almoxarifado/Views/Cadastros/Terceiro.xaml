@@ -112,7 +112,7 @@
             GroupRenderMode="Flat" 
             AutoGenerateColumns="False" 
             CellValidating="OnCellValidatingDados"
-            RowEditEnded="OnRowInsertDados" CanUserDeleteRows="False">
+            RowValidating="OnRowValidating" CanUserDeleteRows="False">
             
             <telerik:RadGridView.Columns>
                 <telerik:GridViewDataColumn DataMemberBinding="{Binding nome}" Header="NOME"/>

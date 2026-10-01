@@ -3,13 +3,10 @@ using Almoxarifado.DataBase.Model;
 using Almoxarifado.DataBase.Model.DTO;
 using Almoxarifado.Views.Cadastros;
 using Almoxarifado.Views.Util;
+using ClosedXML.Excel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Dapper;
-using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using Syncfusion.ExcelToPdfConverter;
-using Syncfusion.Pdf;
-using Syncfusion.XlsIO;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
@@ -42,6 +39,7 @@ public partial class BolsaSaida : UserControl
 
     private async void UserControl_Loaded(object sender, RoutedEventArgs e)
     {
+        Loaded -= UserControl_Loaded;
         BolsaSaidaViewModel vm = (BolsaSaidaViewModel)DataContext;
         List<string> erros = [];
 
@@ -230,71 +228,47 @@ public partial class BolsaSaida : UserControl
 
         try
         {
-            using ExcelEngine excelEngine = new();
-            IApplication application = excelEngine.Excel;
-            application.DefaultVersion = ExcelVersion.Excel2016;
-            // Abre o arquivo modelo
-            FileStream inputStream = new(@$"{BaseSettings.CaminhoSistema}Modelos\RECIBO_SAIDA.xlsx", FileMode.Open, FileAccess.Read);
-            IWorkbook workbook = application.Workbooks.Open(inputStream);
-            IWorksheet worksheet = workbook.Worksheets[0];
+            var modelo = Path.Combine(BaseSettings.CaminhoSistema, "Modelos", "RECIBO_SAIDA.xlsx");
+            var destinoArquivo = Path.Combine(BaseSettings.CaminhoSistema, "Impressos", $"RECIBO_SAIDA-{codFuncionario}-{codBolsa}.xlsx");
+            Directory.CreateDirectory(Path.GetDirectoryName(destinoArquivo) ?? ".");
+
+            using var workbook = new XLWorkbook(modelo);
+            var worksheet = workbook.Worksheet(1);
+
             // Preenche células fixas
-            worksheet.Range["B5"].Text = @$"Prazo máximo para devolução das ferramentas: 31/01/{DateTime.Now.Year+1}";
-            worksheet.Range["B6"].Text = $"{descricaoBolsa} - {destino}";
-            worksheet.Range["E11"].Text = nomeFuncionario;
+            worksheet.Cell("B5").Value = @$"Prazo máximo para devolução das ferramentas: 31/01/{DateTime.Now.Year + 1}";
+            worksheet.Cell("B6").Value = $"{descricaoBolsa} - {destino}";
+            worksheet.Cell("E11").Value = nomeFuncionario;
 
             int linhaInicial = 8; // Inserir a partir da linha 11
 
             foreach (var item in vm.BolsaItens.Where(b => b.quantidade > 0))
             {
-                worksheet.Range[@$"A{linhaInicial}"].Number = Convert.ToDouble(item.codcompladicional);
+                worksheet.Cell($"A{linhaInicial}").Value = Convert.ToDouble(item.codcompladicional);
 
-                worksheet.Range[@$"B{linhaInicial}:C{linhaInicial}"].Merge();
-                worksheet.Range[@$"B{linhaInicial}:C{linhaInicial}"].Text = item.planilha;
+                worksheet.Range($"B{linhaInicial}:C{linhaInicial}").Merge();
+                worksheet.Cell($"B{linhaInicial}").Value = item.planilha;
 
-                worksheet.Range[@$"D{linhaInicial}:H{linhaInicial}"].Merge();
-                worksheet.Range[@$"D{linhaInicial}:H{linhaInicial}"].Text = item?.descricao_completa?.Replace("ÚNICO", null);
+                worksheet.Range($"D{linhaInicial}:H{linhaInicial}").Merge();
+                worksheet.Cell($"D{linhaInicial}").Value = item?.descricao_completa?.Replace("ÚNICO", null);
 
-                worksheet.Range[@$"I{linhaInicial}"].Text = item.unidade;
+                worksheet.Cell($"I{linhaInicial}").Value = item.unidade;
 
-                worksheet.Range[@$"J{linhaInicial}"].Number = Convert.ToDouble(item.quantidade);
+                worksheet.Cell($"J{linhaInicial}").Value = Convert.ToDouble(item.quantidade);
 
-                worksheet.Range[@$"K{linhaInicial}"].Number = Convert.ToDouble(item.valor_unitario);
+                worksheet.Cell($"K{linhaInicial}").Value = Convert.ToDouble(item.valor_unitario);
 
-                worksheet.Range[@$"L{linhaInicial}"].Number = Convert.ToDouble(item.valor_total);
+                worksheet.Cell($"L{linhaInicial}").Value = Convert.ToDouble(item.valor_total);
 
                 linhaInicial++;
-                worksheet.InsertRow(linhaInicial, 1, ExcelInsertOptions.FormatAsBefore);
+                worksheet.Row(linhaInicial).InsertRowsAbove(1);
             }
 
             linhaInicial += 1;
-            worksheet.Range[@$"L{linhaInicial}"].Formula = $"SUM(L7:L{linhaInicial - 1})";
-            // Salva como novo arquivo
-            //FileStream outputStream = new(@$"{BaseSettings.CaminhoSistema}Impressos\RECIBO_SAIDA-{nomeFuncionario}-{descricaoBolsa}.xlsx", FileMode.Create, FileAccess.Write);
-            //workbook.SaveAs(outputStream);
+            worksheet.Cell($"L{linhaInicial}").FormulaA1 = $"SUM(L7:L{linhaInicial - 1})";
 
-            // Cria o conversor
-            ExcelToPdfConverter converter = new(workbook);
-            ExcelToPdfConverterSettings settings = new()
-            {
-                LayoutOptions = LayoutOptions.FitSheetOnOnePage
-            };
-
-            // Converte para documento PDF
-            PdfDocument pdfDocument = converter.Convert(settings);
-
-            // Salva o PDF
-            using (FileStream outputStream = new(@$"{BaseSettings.CaminhoSistema}Impressos\RECIBO_SAIDA-{codFuncionario}-{codBolsa}.PDF", FileMode.Create, FileAccess.Write))
-            {
-                pdfDocument.Save(outputStream);
-            }
-
-            workbook.Close();
-            inputStream.Close();
-            pdfDocument.Close(true);
-            //outputStream.Close();
-
-            //Process.Start("explorer", @$"{BaseSettings.CaminhoSistema}Impressos\RECIBO_SAIDA-{nomeFuncionario}-{descricaoBolsa}.xlsx");
-            Process.Start("explorer", @$"{BaseSettings.CaminhoSistema}Impressos\RECIBO_SAIDA-{codFuncionario}-{codBolsa}.PDF");
+            workbook.SaveAs(destinoArquivo);
+            Process.Start(new ProcessStartInfo(destinoArquivo) { UseShellExecute = true });
         }
         catch (Exception ex)
         {
@@ -655,12 +629,10 @@ public partial class BolsaSaida : UserControl
 
 public partial class BolsaSaidaViewModel : ObservableObject
 {
-    private readonly DatabaseContext _dbContext;
     private readonly DataBaseSettings _dataBaseSettings;
 
     public BolsaSaidaViewModel()
     {
-        _dbContext = new DatabaseContext();
         _dataBaseSettings = DataBaseSettings.Instance;
         Funcionarios = [];
         Bolsas = [];
@@ -698,15 +670,15 @@ public partial class BolsaSaidaViewModel : ObservableObject
     {
         try
         {
-            using DatabaseContext db = new();
-            var result = await db.Funcionarios
-                .OrderBy(f => f.nome_apelido)
-                .ThenBy(f => f.setor)
-                .ToListAsync();
+            await using var conn = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            var result = await conn.QueryAsync<FuncionarioModel>(@"
+                SELECT *
+                FROM almoxarifado_jac.view_funcionarios_terceiros
+                ORDER BY nome_apelido, setor;");
             Funcionarios =  new ObservableCollection<FuncionarioModel>(result);
             return null; // sucesso
         }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx)
+        catch (PostgresException pgEx)
         {
             return $"Erro do banco: {pgEx.MessageText}\nLocal: {pgEx.Where}";
         }
@@ -725,15 +697,16 @@ public partial class BolsaSaidaViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            var data = await _dbContext
-                .TipoBolsas
-                .OrderBy(c => c.descricao)
-                .ToListAsync();
+            await using var conn = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            var data = await conn.QueryAsync<TipoBolsaModel>(@"
+                SELECT codigo_tipobolsa, descricao, codcompladicional
+                FROM almoxarifado_apoio.tbltipobolsa
+                ORDER BY descricao;");
 
             Bolsas = new ObservableCollection<TipoBolsaModel>(data);
             return null; // sucesso
         }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx)
+        catch (PostgresException pgEx)
         {
             return $"Erro do banco: {pgEx.MessageText}\nLocal: {pgEx.Where}";
         }
@@ -751,15 +724,15 @@ public partial class BolsaSaidaViewModel : ObservableObject
     {
         try
         {
-            using DatabaseContext db = new();
-            var result = await db.Aprovados
-                .OrderBy(f => f.sigla)
-                .ThenBy(f => f.sigla_serv)
-                .ToListAsync();
+            await using var conn = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            var result = await conn.QueryAsync<AprovadoModel>(@"
+                SELECT id_aprovado, sigla, sigla_serv, nome
+                FROM producao.t_aprovados
+                ORDER BY sigla, sigla_serv;");
             Aprovados = new ObservableCollection<AprovadoModel>(result);
             return null; // sucesso
         }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx)
+        catch (PostgresException pgEx)
         {
             return $"Erro do banco: {pgEx.MessageText}\nLocal: {pgEx.Where}";
         }
@@ -778,8 +751,11 @@ public partial class BolsaSaidaViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            using DatabaseContext db = new();
-            Produto = await db.Descricoes.FirstOrDefaultAsync(p => p.codcompladicional == codcompleadicional);
+            await using var conn = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            Produto = await conn.QueryFirstOrDefaultAsync<QryDescricaoModel>(@"
+                SELECT *
+                FROM producao.qry3descricoes
+                WHERE codcompladicional = @codcompleadicional;", new { codcompleadicional });
             return null; // sucesso
         }
         catch (NpgsqlException ex) when (ex.InnerException is PostgresException pgEx)
@@ -851,56 +827,53 @@ public partial class BolsaSaidaViewModel : ObservableObject
 
         try
         {
-            using var dbContext = new DatabaseContext(); // CORRETO
-            var executionStrategy = dbContext.Database.CreateExecutionStrategy();
-
-            return await executionStrategy.ExecuteAsync(async () =>
+            await using var connection = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            await connection.OpenAsync();
+            await using var transaction = await connection.BeginTransactionAsync();
+            try
             {
-                await using var transaction = await dbContext.Database.BeginTransactionAsync();
+                var totalItens = await connection.ExecuteScalarAsync<int>(@"
+                    SELECT COUNT(*)
+                    FROM almoxarifado_apoio.tblbolsafixa
+                    WHERE codigo_tipobolsa = @codBolsa;",
+                    new { codBolsa }, transaction);
 
-                try
-                {
-                    var bolsaItens = await dbContext.BolsaFixas
-                                                    .Where(c => c.codigo_tipobolsa == codBolsa)
-                                                   .ToListAsync();
+                if (totalItens == 0)
+                    return "Nenhum item encontrado para a bolsa selecionada.";
 
-                    var existingItems = await dbContext.BolsaSaidas
-                                                       .Where(b => b.codigo_bolsa == codBolsa && b.codfun == codFunc && b.destino_shop == sigla)
-                                                       .Select(b => b.codcompladicional)
-                                                       .ToListAsync();
+                await connection.ExecuteAsync(@"
+                    INSERT INTO almoxarifado_apoio.tblsaidabolsa
+                        (codfun, codigo_bolsa, destino_shop, codcompladicional, quantidade)
+                    SELECT
+                        @codFunc,
+                        @codBolsa,
+                        @sigla,
+                        f.codcompladicional,
+                        f.quantidade
+                    FROM almoxarifado_apoio.tblbolsafixa f
+                    WHERE f.codigo_tipobolsa = @codBolsa
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM almoxarifado_apoio.tblsaidabolsa s
+                          WHERE s.codigo_bolsa = @codBolsa
+                            AND s.codfun = @codFunc
+                            AND s.destino_shop = @sigla
+                            AND s.codcompladicional = f.codcompladicional
+                      );", new { codBolsa, codFunc, sigla }, transaction);
 
-                    var newItems = bolsaItens.Where(item => !existingItems.Contains(item.codcompladicional));
-                    foreach (var item in newItems)
-                    {
-                        dbContext.BolsaSaidas.Add(new BolsaSaidaModel
-                        {
-                            codfun = codFunc,
-                            codigo_bolsa = codBolsa,
-                            destino_shop = sigla,
-                            codcompladicional = item.codcompladicional,
-                            quantidade = item.quantidade
-                        });
-                    }
-
-                    await dbContext.SaveChangesAsync();
-                    await transaction.CommitAsync();
-
-                    if (bolsaItens.Count == 0)
-                        return "Nenhum item encontrado para a bolsa selecionada.";
-
-                    return null; // sucesso
-                }
-                catch (NpgsqlException ex) when (ex.InnerException is PostgresException pgEx)
-                {
-                    await transaction.RollbackAsync();
-                    return $"Erro do banco: {pgEx.MessageText}\nLocal: {pgEx.Where}";
-                }
-                catch (Exception ex)
-                {
-                    await transaction.RollbackAsync();
-                    return $"Erro inesperado: {ex.Message}";
-                }
-            });
+                await transaction.CommitAsync();
+                return null; // sucesso
+            }
+            catch (PostgresException pgEx)
+            {
+                await transaction.RollbackAsync();
+                return $"Erro do banco: {pgEx.MessageText}\nLocal: {pgEx.Where}";
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return $"Erro inesperado: {ex.Message}";
+            }
         }
         finally
         {
@@ -914,40 +887,31 @@ public partial class BolsaSaidaViewModel : ObservableObject
 
         try
         {
-            using var dbContext = new DatabaseContext(); // CORRETO
-            var executionStrategy = dbContext.Database.CreateExecutionStrategy();
-
-            return await executionStrategy.ExecuteAsync(async () =>
+            await using var connection = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            await connection.OpenAsync();
+            await using var transaction = await connection.BeginTransactionAsync();
+            try
             {
-                await using var transaction = await dbContext.Database.BeginTransactionAsync();
+                await connection.ExecuteAsync(@"
+                    INSERT INTO almoxarifado_apoio.tblsaidabolsa
+                        (codfun, codigo_bolsa, destino_shop, codcompladicional, quantidade)
+                    VALUES
+                        (@codFunc, @codBolsa, @sigla, @codcompladicional, @quantidade);",
+                    new { codBolsa, codFunc, sigla, codcompladicional, quantidade }, transaction);
 
-                try
-                {
-                    dbContext.BolsaSaidas.Add(new BolsaSaidaModel
-                    {
-                        codfun = codFunc,
-                        codigo_bolsa = codBolsa,
-                        destino_shop = sigla,
-                        codcompladicional = codcompladicional,
-                        quantidade = quantidade
-                    });
-
-                    await dbContext.SaveChangesAsync();
-                    await transaction.CommitAsync();
-
-                    return null; // sucesso
-                }
-                catch (NpgsqlException ex) when (ex.InnerException is PostgresException pgEx)
-                {
-                    await transaction.RollbackAsync();
-                    return $"Erro do banco: {pgEx.MessageText}\nLocal: {pgEx.Where}";
-                }
-                catch (Exception ex)
-                {
-                    await transaction.RollbackAsync();
-                    return $"Erro inesperado: {ex.Message}";
-                }
-            });
+                await transaction.CommitAsync();
+                return null; // sucesso
+            }
+            catch (PostgresException pgEx)
+            {
+                await transaction.RollbackAsync();
+                return $"Erro do banco: {pgEx.MessageText}\nLocal: {pgEx.Where}";
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return $"Erro inesperado: {ex.Message}";
+            }
         }
         finally
         {
@@ -960,12 +924,16 @@ public partial class BolsaSaidaViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            using DatabaseContext db = new();
-            var bolsaExistente = await db.BolsaSaidas.FindAsync(bolsaSaida.cod_controlelinha);
-            var novaBolsa = bolsaExistente;
-            novaBolsa.quantidade = bolsaSaida.quantidade ?? 0;
-            db.Entry(bolsaExistente).CurrentValues.SetValues(novaBolsa);
-            await db.SaveChangesAsync();
+            await using var conn = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            await conn.ExecuteAsync(@"
+                UPDATE almoxarifado_apoio.tblsaidabolsa
+                SET quantidade = @quantidade
+                WHERE cod_controlelinha = @cod_controlelinha;",
+                new
+                {
+                    bolsaSaida.cod_controlelinha,
+                    quantidade = bolsaSaida.quantidade ?? 0
+                });
             return null; // sucesso
         }
         catch (NpgsqlException ex) when (ex.InnerException is PostgresException pgEx)

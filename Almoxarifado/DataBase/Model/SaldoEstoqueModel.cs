@@ -1,9 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Almoxarifado.DataBase.Model
 {
-    [Keyless]
     [Table("saldo_estoque_final", Schema = "almoxarifado_jac")]
     public class SaldoEstoqueModel
     {

@@ -1,9 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Almoxarifado.DataBase.Model
 {
-    [Keyless]
     [Table("qry_analise_saldo_estoque_ponto_pedido", Schema = "almoxarifado_jac")]
     public class AnalisePontoPedidoModel
     {

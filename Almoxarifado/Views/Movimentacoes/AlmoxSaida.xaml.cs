@@ -1,8 +1,8 @@
 ﻿using Almoxarifado.DataBase;
 using Almoxarifado.DataBase.Model;
-using Microsoft.EntityFrameworkCore;
+using Dapper;
+using Npgsql;
 using SharpDX;
-using Syncfusion.Linq;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
@@ -31,6 +31,7 @@ namespace Almoxarifado.Views.Movimentacoes
 
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            Loaded -= UserControl_Loaded;
             try
             {
                 Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = Cursors.Wait; });
@@ -587,8 +588,11 @@ namespace Almoxarifado.Views.Movimentacoes
         {
             try
             {
-                using DatabaseContext db = new();
-                var data = await db.AtendentesAlmox.OrderBy(c => c.nome_funcionario).ToListAsync();
+                await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+                var data = await conn.QueryAsync<AtendenteAlmoxModel>(@"
+                    SELECT nome_funcionario, funcao, username
+                    FROM almoxarifado_jac.tbl_atendentes_almox
+                    ORDER BY nome_funcionario;");
                 return new ObservableCollection<AtendenteAlmoxModel>(data);
             }
             catch (Exception)
@@ -602,39 +606,12 @@ namespace Almoxarifado.Views.Movimentacoes
         {
             try
             {
-                using DatabaseContext db = new();
-                var result = await db.Funcionarios
-                    .OrderBy(f => f.nome_apelido)
-                    .ThenBy(f => f.setor)
-                    .ToListAsync();
+                await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+                var result = await conn.QueryAsync<FuncionarioModel>(@"
+                    SELECT *
+                    FROM almoxarifado_jac.view_funcionarios_terceiros
+                    ORDER BY nome_apelido, setor;");
                 return new ObservableCollection<FuncionarioModel>(result);
-                /*
-                var rh = await db.Funcionarios.OrderBy(f => f.nome_apelido).Where(f => f.data_demissao == null).ToListAsync();
-                var almox = await db.Terceiros.OrderBy(f => f.nome).ToListAsync();
-                */
-
-                /*
-                var queryRH = db.Funcionarios.Where(f => f.data_demissao == null)
-                        .Select(a => new FuncionarioUnionModel
-                        {
-                            codfun = a.codfun,
-                            nome = a.nome_apelido,
-                            setor = a.setor
-                        });
-
-                var queryTerceiro = db.Terceiros
-                        .Select(b => new FuncionarioUnionModel
-                        {
-                            codfun = b.codfun,
-                            nome = b.nome,
-                            setor = "TERCEIRO"
-                        });
-
-                var unionQuery = queryRH.Union(queryTerceiro);
-                var result = await unionQuery.OrderBy(f => f.nome).ToListAsync();
-
-                return new ObservableCollection<FuncionarioUnionModel>(result);
-                */
             }
             catch (Exception)
             {
@@ -646,10 +623,13 @@ namespace Almoxarifado.Views.Movimentacoes
         {
             try
             {
-                using DatabaseContext db = new();
-                var data = await db.Descricoes
-                    .Where(p => p.codcompladicional == codcompladicional && p.planilha.StartsWith("ALMO") && !p.inativo.Contains("-1"))
-                    .FirstOrDefaultAsync();
+                await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+                var data = await conn.QueryFirstOrDefaultAsync<QryDescricaoModel>(@"
+                    SELECT *
+                    FROM producao.qry3descricoes
+                    WHERE codcompladicional = @codcompladicional
+                      AND planilha LIKE 'ALMO%'
+                      AND COALESCE(inativo, '') NOT LIKE '%-1%';", new { codcompladicional });
                 return data;
             }
             catch (Exception)
@@ -662,10 +642,12 @@ namespace Almoxarifado.Views.Movimentacoes
         {
             try
             {
-                using DatabaseContext db = new();
-                var data = await db.ControleAlmoxEstoques
-                    .Where(p => p.bloqueado == "-1" && p.codcompladicional == codcompladicional)
-                    .FirstOrDefaultAsync();
+                await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+                var data = await conn.QueryFirstOrDefaultAsync<ControleAlmoxEstoqueModel>(@"
+                    SELECT *
+                    FROM pcp.tbl_controle_almox_estoque
+                    WHERE bloqueado = '-1'
+                      AND codcompladicional = @codcompladicional;", new { codcompladicional });
                 return data;
             }
             catch (Exception)
@@ -678,18 +660,13 @@ namespace Almoxarifado.Views.Movimentacoes
         {
             try
             {
-                using DatabaseContext db = new();
-                /*
-                var data = await db.ProdutosAlmox
-                    .GroupBy(produto => produto.planilha)
-                    .Select(grupo => grupo.Key)
-                    .OrderBy(planilha => planilha)
-                    .ToListAsync();
-                */
-                var data = await db.Relplans
-                    .OrderBy(planilha => planilha.planilha)
-                    .Where(planilha => (planilha.planilha.StartsWith("ALMO") || planilha.planilha == "ESTOQUE TI") && planilha.ativo.Contains("1"))
-                    .ToListAsync();
+                await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+                var data = await conn.QueryAsync<RelplanModel>(@"
+                    SELECT *
+                    FROM producao.relplan
+                    WHERE (planilha LIKE 'ALMO%' OR planilha = 'ESTOQUE TI')
+                      AND COALESCE(ativo, '') LIKE '%1%'
+                    ORDER BY planilha;");
 
                 return new ObservableCollection<RelplanModel>(data);
             }
@@ -703,11 +680,13 @@ namespace Almoxarifado.Views.Movimentacoes
         {
             try
             {
-                using DatabaseContext db = new();
-                var data = await db.Produtos
-                    .Where(produto => produto.planilha == planilha && produto.inativo.Contains("0"))
-                    .OrderBy(descricao => descricao)
-                    .ToListAsync();
+                await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+                var data = await conn.QueryAsync<ProdutoModel>(@"
+                    SELECT *
+                    FROM producao.produtos
+                    WHERE planilha = @planilha
+                      AND COALESCE(inativo, '') LIKE '%0%'
+                    ORDER BY descricao;", new { planilha });
                 return new ObservableCollection<ProdutoModel>(data);
             }
             catch (Exception)
@@ -720,19 +699,13 @@ namespace Almoxarifado.Views.Movimentacoes
         {
             try
             {
-                using DatabaseContext db = new();
-                /*
-                var data = await db.ProdutosAlmox
-                    .Where(produto => produto.descricao == descricao)
-                    .GroupBy(produto => produto.descricao_adicional)
-                    .Select(grupo => grupo.Key)
-                    .OrderBy(descricaoAdicional => descricaoAdicional)
-                    .ToListAsync();
-                */
-                var data = await db.DescAdicionais
-                    .Where(produto => produto.codigoproduto == codigoproduto && produto.inativo.Contains("0"))
-                    .OrderBy(descricaoAdicional => descricaoAdicional)
-                    .ToListAsync();
+                await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+                var data = await conn.QueryAsync<TabelaDescAdicionalModel>(@"
+                    SELECT *
+                    FROM producao.tabela_desc_adicional
+                    WHERE codigoproduto = @codigoproduto
+                      AND COALESCE(inativo, '') LIKE '%0%'
+                    ORDER BY descricao_adicional;", new { codigoproduto });
                 return new ObservableCollection<TabelaDescAdicionalModel>(data);
             }
             catch (Exception)
@@ -745,19 +718,13 @@ namespace Almoxarifado.Views.Movimentacoes
         {
             try
             {
-                using DatabaseContext db = new();
-                /*
-                var data = await db.ProdutosAlmox
-                    .Where(produto => produto.descricao_adicional == descricaoAdicional)
-                    .GroupBy(produto => produto.complementoadicional)
-                    .Select(grupo => grupo.Key)
-                    .OrderBy(complementoAdicional => complementoAdicional)
-                    .ToListAsync();
-                */
-                var data = await db.ComplementoAdicionais
-                    .Where(produto => produto.coduniadicional == coduniadicional && produto.inativo.Contains("0"))
-                    .OrderBy(complementoAdicional => complementoAdicional.complementoadicional)
-                    .ToListAsync();
+                await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+                var data = await conn.QueryAsync<TblComplementoAdicionalModel>(@"
+                    SELECT *
+                    FROM producao.tblcomplementoadicional
+                    WHERE coduniadicional = @coduniadicional
+                      AND COALESCE(inativo, '') LIKE '%0%'
+                    ORDER BY complementoadicional;", new { coduniadicional });
                 return new ObservableCollection<TblComplementoAdicionalModel>(data);
             }
             catch (Exception)
@@ -768,53 +735,66 @@ namespace Almoxarifado.Views.Movimentacoes
 
         public async Task SaidaAsync(SaidaAlmoxModel saida)
         {
-            using DatabaseContext db = new();
-            var strategy = db.Database.CreateExecutionStrategy();
-
-            await strategy.ExecuteAsync(async () =>
+            await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+            await conn.OpenAsync();
+            await using var transaction = await conn.BeginTransactionAsync();
+            try
             {
-                using var transaction = db.Database.BeginTransaction();
-                try
-                {
-                    //saida = await db.Saidas.SingleInsertAsync(saida);
-                    await db.Saidas.AddAsync(saida);
-                    await db.SaveChangesAsync();
+                saida.cod_saida_almox = await conn.ExecuteScalarAsync<long>(@"
+                    INSERT INTO almoxarifado_jac.t_saida_almox
+                        (cod_movimentacao, barcode, qtde, data, resp, requisicao, destino,
+                         incluido_por, data_inclusao, funcionario, setor, unidade, expurgo,
+                         obs, num_os, endereco, codcompladicional, codfun)
+                    VALUES
+                        (@cod_movimentacao, @barcode, @qtde, @data, @resp, @requisicao, @destino,
+                         @incluido_por, @data_inclusao, @funcionario, @setor, @unidade, @expurgo,
+                         @obs, @num_os, @endereco, @codcompladicional, @codfun)
+                    RETURNING cod_saida_almox;", saida, transaction);
 
-                    if(saida.destino == "ACERTO ESTOQUE")
-                    await db.ControleAlmoxEstoques.AddAsync(
-                        new ControleAlmoxEstoqueModel 
+                if(saida.destino == "ACERTO ESTOQUE")
+                {
+                    await conn.ExecuteAsync(@"
+                        INSERT INTO pcp.tbl_controle_almox_estoque
+                            (cod_movimentacao, cod_almox, barcode, codcompladicional, quantidade,
+                             data, operacao, processo, num_os, incluido_por, incluido_data, bloqueado)
+                        VALUES
+                            (@cod_movimentacao, @cod_almox, @barcode, @codcompladicional, @quantidade,
+                             @data, @operacao, @processo, @num_os, @incluido_por, @incluido_data, @bloqueado);",
+                        new
                         {
-                            cod_movimentacao = saida.cod_movimentacao,
+                            saida.cod_movimentacao,
                             cod_almox = saida.cod_saida_almox,
-                            barcode = saida.barcode,
-                            codcompladicional = saida.codcompladicional,
+                            saida.barcode,
+                            saida.codcompladicional,
                             quantidade = saida.qtde,
-                            data = saida.data,
+                            saida.data,
                             operacao = saida.destino,
                             processo = "SAIDA",
-                            num_os = saida.num_os,
-                            incluido_por = saida.incluido_por,
+                            saida.num_os,
+                            saida.incluido_por,
                             incluido_data = saida.data_inclusao,
                             bloqueado = "-1"
-                        });
-                    await db.SaveChangesAsync();
+                        }, transaction);
+                }
 
-                    transaction.Commit();
-                }
-                catch (Exception)
-                {
-                    transaction.Rollback();
-                    throw;
-                }
-            });
+                await transaction.CommitAsync();
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<BarcodeModel> GetBarcodeAsync(long codigo)
         {
             try
             {
-                using DatabaseContext db = new();
-                return await db.Barcodes.FindAsync(codigo);
+                await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+                return await conn.QueryFirstOrDefaultAsync<BarcodeModel>(@"
+                    SELECT codigo, barcode, impresso, compra
+                    FROM producao.tbl_barcodes
+                    WHERE codigo = @codigo;", new { codigo });
             }
             catch (Exception)
             {
@@ -826,12 +806,12 @@ namespace Almoxarifado.Views.Movimentacoes
         {
             try
             {
-                using DatabaseContext db = new();
-                var lastMov = await db.Saidas
-                    .Select(entidade => entidade.cod_movimentacao)
-                    .MaxAsync();
+                await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+                var lastMov = await conn.ExecuteScalarAsync<long?>(@"
+                    SELECT MAX(cod_movimentacao)
+                    FROM almoxarifado_jac.t_saida_almox;");
 
-                return lastMov + 1;
+                return (lastMov ?? 0) + 1;
             }
             catch (Exception)
             {
@@ -843,21 +823,20 @@ namespace Almoxarifado.Views.Movimentacoes
         {
             try
             {
-                using DatabaseContext db = new();
-                var resultado  = from saida in db.Saidas
-                                 join barcode in db.Barcodes on saida.barcode equals barcode.barcode
-                                 join descricao in db.Descricoes on barcode.codigo equals descricao.codcompladicional
-                                 where saida.cod_movimentacao == CodMovimentacao
-                                 select new ResultadoMovimentacao
-                                 {
-                                     cod_saida_almox = saida.cod_saida_almox,
-                                     planilha = descricao.planilha,
-                                     descricao_completa = descricao.descricao_completa,
-                                     unidade = saida.unidade,
-                                     qtde = saida.qtde
-                                 };
+                await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+                var resultado = await conn.QueryAsync<ResultadoMovimentacao>(@"
+                    SELECT
+                        saida.cod_saida_almox,
+                        descricao.planilha,
+                        descricao.descricao_completa,
+                        saida.unidade,
+                        saida.qtde
+                    FROM almoxarifado_jac.t_saida_almox saida
+                    JOIN producao.tbl_barcodes barcode ON saida.barcode = barcode.barcode
+                    JOIN producao.qry3descricoes descricao ON barcode.codigo = descricao.codcompladicional
+                    WHERE saida.cod_movimentacao = @CodMovimentacao;", new { CodMovimentacao });
 
-                return new ObservableCollection<ResultadoMovimentacao>(await resultado.ToListAsync());
+                return new ObservableCollection<ResultadoMovimentacao>(resultado);
             }
             catch (Exception)
             {

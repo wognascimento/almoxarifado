@@ -1,7 +1,7 @@
-﻿using Almoxarifado.DataBase;
+using Almoxarifado.DataBase;
 using Almoxarifado.DataBase.Model;
-using Microsoft.EntityFrameworkCore;
-using Syncfusion.Data.Extensions;
+using Dapper;
+using Npgsql;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
@@ -17,6 +17,11 @@ namespace Almoxarifado.Views.Cadastros
     /// </summary>
     public partial class Atendentes : UserControl
     {
+    private void OnRowValidating(object sender, Telerik.Windows.Controls.GridViewRowValidatingEventArgs e)
+    {
+        if (e.Row?.Item is not AtendenteAlmoxModel item) return;
+        ValidatedGridSave.Save(sender, e, () => ((AtendentesViewModel)DataContext).SalvarAtendenteAsync(item));
+    }
         public Atendentes()
         {
             InitializeComponent();
@@ -25,6 +30,7 @@ namespace Almoxarifado.Views.Cadastros
 
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            Loaded -= UserControl_Loaded;
             try
             {
                 Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = Cursors.Wait; });
@@ -43,7 +49,7 @@ namespace Almoxarifado.Views.Cadastros
         {
             if (e.Cell.Column.UniqueName == "nome_funcionario")
             {
-                if(e.NewValue.ToString() == string.Empty)
+                if(string.IsNullOrWhiteSpace(e.NewValue?.ToString()))
                 {
                     e.IsValid = false;
                     e.ErrorMessage = "Informe o nome do Atendente.";
@@ -52,7 +58,7 @@ namespace Almoxarifado.Views.Cadastros
             }
             else if(e.Cell.Column.UniqueName == "funcao")
             {
-                if (e.NewValue.ToString() == string.Empty)
+                if (string.IsNullOrWhiteSpace(e.NewValue?.ToString()))
                 {
                     e.IsValid = false;
                     e.ErrorMessage = "Informe a função do Atendente.";
@@ -60,33 +66,7 @@ namespace Almoxarifado.Views.Cadastros
             }
         }
 
-        private async void OnRowInsertDados(object sender, GridViewRowEditEndedEventArgs e)
-        {
 
-            try
-            {
-                AtendentesViewModel vm = (AtendentesViewModel)DataContext;
-
-                if (e.EditAction == GridViewEditAction.Cancel)
-                {
-                    return;
-                }
-                if (e.EditOperationType == GridViewEditOperationType.Insert)
-                {
-                    await Task.Run(() => vm.SalvarAtendenteAsync((AtendenteAlmoxModel)e.NewData));
-                    //NewData = {Almoxarifado.DataBase.Model.AtendenteAlmoxModel}
-                }
-                if (e.EditOperationType == GridViewEditOperationType.Edit)
-                {
-                    //Edit the entry to the data base. 
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-
-        }
 
         private void OnDeleting(object sender, GridViewDeletingEventArgs e)
         {
@@ -110,8 +90,11 @@ namespace Almoxarifado.Views.Cadastros
         {
             try
             {
-                using DatabaseContext db = new();
-                var data = await db.AtendentesAlmox.OrderBy(c => c.nome_funcionario).ToListAsync();
+                await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+                var data = await conn.QueryAsync<AtendenteAlmoxModel>(@"
+                    SELECT nome_funcionario, funcao, username
+                    FROM almoxarifado_jac.tbl_atendentes_almox
+                    ORDER BY nome_funcionario;");
                 return new ObservableCollection<AtendenteAlmoxModel>(data);
             }
             catch (Exception)
@@ -122,11 +105,20 @@ namespace Almoxarifado.Views.Cadastros
 
         public async Task SalvarAtendenteAsync(AtendenteAlmoxModel atendente)
         {
+            if (string.IsNullOrWhiteSpace(atendente.nome_funcionario) || string.IsNullOrWhiteSpace(atendente.funcao))
+                throw new InvalidOperationException("Informe o funcionario e a funcao.");
             try
             {
-                using DatabaseContext db = new();
-                await db.AtendentesAlmox.SingleMergeAsync(atendente);
-                await db.SaveChangesAsync();
+                await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+                await conn.ExecuteAsync(@"
+                    INSERT INTO almoxarifado_jac.tbl_atendentes_almox
+                        (nome_funcionario, funcao, username)
+                    VALUES
+                        (@nome_funcionario, @funcao, @username)
+                    ON CONFLICT (nome_funcionario)
+                    DO UPDATE SET
+                        funcao = EXCLUDED.funcao,
+                        username = EXCLUDED.username;", atendente);
             }
             catch (Exception)
             {

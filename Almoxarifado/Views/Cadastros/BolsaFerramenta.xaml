@@ -19,7 +19,7 @@
             NewRowPosition="Bottom" 
             GroupRenderMode="Flat" 
             CellValidating="OnCellValidatingDados"
-            RowEditEnded="OnRowInsertDados"  >
+            RowValidating="OnRowValidating"  >
             <telerik:RadGridView.Columns>
                 <!--<telerik:GridViewDataColumn DataMemberBinding="{Binding codigo_tipobolsa}" Header="ID" IsEnabled="False"/>-->
                 <telerik:GridViewDataColumn DataMemberBinding="{Binding descricao}" Header="Descrição"/>

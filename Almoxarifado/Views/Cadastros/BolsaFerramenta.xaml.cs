@@ -1,6 +1,7 @@
 ﻿using Almoxarifado.DataBase;
 using Almoxarifado.DataBase.Model;
-using Microsoft.EntityFrameworkCore;
+using Dapper;
+using Npgsql;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
@@ -14,6 +15,11 @@ namespace Almoxarifado.Views.Cadastros;
 /// </summary>
 public partial class BolsaFerramenta : UserControl
 {
+    private void OnRowValidating(object sender, Telerik.Windows.Controls.GridViewRowValidatingEventArgs e)
+    {
+        if (e.Row?.Item is not TipoBolsaModel item) return;
+        ValidatedGridSave.Save(sender, e, () => ((BolsaFerramentaViewModel)DataContext).AdicionarBolsasAsync(item));
+    }
     public BolsaFerramenta()
     {
         InitializeComponent();
@@ -22,6 +28,7 @@ public partial class BolsaFerramenta : UserControl
 
     private async void UserControl_Loaded(object sender, RoutedEventArgs e)
     {
+        Loaded -= UserControl_Loaded;
         try
         {
             Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = Cursors.Wait; });
@@ -36,7 +43,7 @@ public partial class BolsaFerramenta : UserControl
         }
     }
 
-    private async void OnCellValidatingDados(object sender, Telerik.Windows.Controls.GridViewCellValidatingEventArgs e)
+    private void OnCellValidatingDados(object sender, Telerik.Windows.Controls.GridViewCellValidatingEventArgs e)
     {
         BolsaFerramentaViewModel vm = (BolsaFerramentaViewModel)DataContext;
         var dado = e.Row.Item as TipoBolsaModel;
@@ -44,14 +51,13 @@ public partial class BolsaFerramenta : UserControl
         {
             if (e.Cell.Column.UniqueName == "descricao")
             {
-                if (e.NewValue.ToString() == string.Empty)
+                if (string.IsNullOrWhiteSpace(e.NewValue?.ToString()))
                 {
                     e.IsValid = false;
                     e.ErrorMessage = "Informe a Descrição.";
                     return;
                 }
             }
-           await vm.AdicionarBolsasAsync(dado);
         }
         catch (Exception ex)
         {
@@ -82,8 +88,11 @@ public class BolsaFerramentaViewModel : INotifyPropertyChanged
     {
         try
         {
-            using DatabaseContext db = new();
-            var data = await db.TipoBolsas.OrderBy(c => c.codigo_tipobolsa).ToListAsync();
+            await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+            var data = await conn.QueryAsync<TipoBolsaModel>(@"
+                SELECT codigo_tipobolsa, descricao, codcompladicional
+                FROM almoxarifado_apoio.tbltipobolsa
+                ORDER BY codigo_tipobolsa;");
             return new ObservableCollection<TipoBolsaModel>(data);
         }
         catch (Exception)
@@ -94,16 +103,26 @@ public class BolsaFerramentaViewModel : INotifyPropertyChanged
 
     public async Task AdicionarBolsasAsync(TipoBolsaModel tipoBolsa)
     {
+        if (string.IsNullOrWhiteSpace(tipoBolsa.descricao))
+            throw new InvalidOperationException("Informe a descricao.");
         try
         {
-            using DatabaseContext db = new();
-            var tipoBolsaExistente = await db.TipoBolsas.FindAsync(tipoBolsa.codigo_tipobolsa);
-            if (tipoBolsaExistente == null)
-               await db.TipoBolsas.AddAsync(tipoBolsa);
-            else
-                db.Entry(tipoBolsaExistente).CurrentValues.SetValues(tipoBolsa);
+            await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+            if (tipoBolsa.codigo_tipobolsa is null or 0)
+            {
+                tipoBolsa.codigo_tipobolsa = await conn.ExecuteScalarAsync<long>(@"
+                    INSERT INTO almoxarifado_apoio.tbltipobolsa (descricao, codcompladicional)
+                    VALUES (@descricao, @codcompladicional)
+                    RETURNING codigo_tipobolsa;", tipoBolsa);
+                return;
+            }
 
-            await db.SaveChangesAsync();
+            await conn.ExecuteAsync(@"
+                INSERT INTO almoxarifado_apoio.tbltipobolsa (codigo_tipobolsa, descricao, codcompladicional)
+                VALUES (@codigo_tipobolsa, @descricao, @codcompladicional)
+                ON CONFLICT (codigo_tipobolsa) DO UPDATE SET
+                    descricao = EXCLUDED.descricao,
+                    codcompladicional = EXCLUDED.codcompladicional;", tipoBolsa);
         }
         catch (Exception)
         {

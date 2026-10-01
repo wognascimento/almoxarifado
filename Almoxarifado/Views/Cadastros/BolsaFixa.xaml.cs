@@ -4,7 +4,6 @@ using Almoxarifado.DataBase.Model.DTO;
 using Almoxarifado.Views.Util;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Dapper;
-using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using System.Collections.ObjectModel;
 using System.Windows;
@@ -37,6 +36,7 @@ public partial class BolsaFixa : UserControl
 
     private async void UserControl_Loaded(object sender, RoutedEventArgs e)
     {
+        Loaded -= UserControl_Loaded;
         BolsaFixaViewModel vm = (BolsaFixaViewModel)DataContext;
         List<string> erros = [];
         string? erro1 = await vm.CarregarBolsasAsync();
@@ -654,12 +654,10 @@ public partial class BolsaFixa : UserControl
 
 public partial class BolsaFixaViewModel : ObservableObject
 {
-    private readonly DatabaseContext _dbContext;
     private readonly DataBaseSettings _dataBaseSettings;
 
     public BolsaFixaViewModel()
     {
-        _dbContext = new DatabaseContext();
         _dataBaseSettings = DataBaseSettings.Instance;
         Bolsas = [];
         Planilhas = [];
@@ -701,15 +699,16 @@ public partial class BolsaFixaViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            var data = await _dbContext
-                .TipoBolsas
-                .OrderBy(c => c.descricao)
-                .ToListAsync();
+            await using var conn = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            var data = await conn.QueryAsync<TipoBolsaModel>(@"
+                SELECT codigo_tipobolsa, descricao, codcompladicional
+                FROM almoxarifado_apoio.tbltipobolsa
+                ORDER BY descricao;");
 
             Bolsas = new ObservableCollection<TipoBolsaModel>(data);
             return null; // sucesso
         }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx)
+        catch (PostgresException pgEx)
         {
             return $"Erro do banco: {pgEx.MessageText}\nLocal: {pgEx.Where}";
         }
@@ -728,16 +727,17 @@ public partial class BolsaFixaViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            var data = await _dbContext
-                .Relplans
-                .Where(p => p.planilha != null && p.planilha.StartsWith("ALMOX")) // Verifica se 'planilha' não é nulo antes de chamar StartsWith
-                .OrderBy(c => c.planilha)
-                .ToListAsync();
+            await using var conn = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            var data = await conn.QueryAsync<RelplanModel>(@"
+                SELECT *
+                FROM producao.relplan
+                WHERE planilha IS NOT NULL AND planilha LIKE 'ALMOX%'
+                ORDER BY planilha;");
 
             Planilhas = new ObservableCollection<RelplanModel>(data);
             return null; // sucesso
         }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx)
+        catch (PostgresException pgEx)
         {
             return $"Erro do banco: {pgEx.MessageText}\nLocal: {pgEx.Where}";
         }
@@ -805,11 +805,13 @@ public partial class BolsaFixaViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            using DatabaseContext db = new();
-            var data = await db.Produtos
-                .Where(produto => produto.planilha == planilha && produto.inativo.Contains("0"))
-                .OrderBy(descricao => descricao)
-                .ToListAsync();
+            await using var conn = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            var data = await conn.QueryAsync<ProdutoModel>(@"
+                SELECT *
+                FROM producao.produtos
+                WHERE planilha = @planilha
+                  AND COALESCE(inativo, '') LIKE '%0%'
+                ORDER BY descricao;", new { planilha });
             Produtos = new ObservableCollection<ProdutoModel>(data);    
             return null; // sucesso
         }
@@ -832,11 +834,13 @@ public partial class BolsaFixaViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            using DatabaseContext db = new();
-            var data = await db.DescAdicionais
-                .Where(produto => produto.codigoproduto == codigoproduto && produto.inativo.Contains("0"))
-                .OrderBy(descricaoAdicional => descricaoAdicional)
-                .ToListAsync();
+            await using var conn = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            var data = await conn.QueryAsync<TabelaDescAdicionalModel>(@"
+                SELECT *
+                FROM producao.tabela_desc_adicional
+                WHERE codigoproduto = @codigoproduto
+                  AND COALESCE(inativo, '') LIKE '%0%'
+                ORDER BY descricao_adicional;", new { codigoproduto });
             DescricaoAdicionais = new ObservableCollection<TabelaDescAdicionalModel>(data);
             return null; // sucesso
         }
@@ -859,11 +863,13 @@ public partial class BolsaFixaViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            using DatabaseContext db = new();
-            var data = await db.ComplementoAdicionais
-                .Where(produto => produto.coduniadicional == coduniadicional && produto.inativo.Contains("0"))
-                .OrderBy(complementoAdicional => complementoAdicional.complementoadicional)
-                .ToListAsync();
+            await using var conn = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            var data = await conn.QueryAsync<TblComplementoAdicionalModel>(@"
+                SELECT *
+                FROM producao.tblcomplementoadicional
+                WHERE coduniadicional = @coduniadicional
+                  AND COALESCE(inativo, '') LIKE '%0%'
+                ORDER BY complementoadicional;", new { coduniadicional });
             ComplemntoAdicionais = new ObservableCollection<TblComplementoAdicionalModel>(data);
             return null; // sucesso
         }
@@ -886,15 +892,19 @@ public partial class BolsaFixaViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            using DatabaseContext db = new();
-            var novaBolsa = new BolsaFixaModel
-            {
-                codcompladicional = bolsaFixa.codcompladicional,
-                codigo_tipobolsa = bolsaFixa.codigo_tipobolsa,
-                quantidade = bolsaFixa.quantidade ?? 0
-            };
-            await db.BolsaFixas.AddAsync(novaBolsa);
-            await db.SaveChangesAsync();
+            await using var conn = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            bolsaFixa.cod_bolsafixa = await conn.ExecuteScalarAsync<long>(@"
+                INSERT INTO almoxarifado_apoio.tblbolsafixa
+                    (codcompladicional, codigo_tipobolsa, quantidade)
+                VALUES
+                    (@codcompladicional, @codigo_tipobolsa, @quantidade)
+                RETURNING cod_bolsafixa;",
+                new
+                {
+                    bolsaFixa.codcompladicional,
+                    bolsaFixa.codigo_tipobolsa,
+                    quantidade = bolsaFixa.quantidade ?? 0
+                });
             return null; // sucesso
         }
         catch (NpgsqlException ex) when (ex.InnerException is PostgresException pgEx)
@@ -916,13 +926,18 @@ public partial class BolsaFixaViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            using DatabaseContext db = new();
-            var tipoBolsaExistente = await db.BolsaFixas.FindAsync(bolsaFixa.cod_bolsafixa);
-            var novaBolsa = tipoBolsaExistente;
-            novaBolsa.codcompladicional = bolsaFixa.codcompladicional;
-            novaBolsa.quantidade = bolsaFixa.quantidade ?? 0;
-            db.Entry(tipoBolsaExistente).CurrentValues.SetValues(novaBolsa);
-            await db.SaveChangesAsync();
+            await using var conn = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            await conn.ExecuteAsync(@"
+                UPDATE almoxarifado_apoio.tblbolsafixa
+                SET codcompladicional = @codcompladicional,
+                    quantidade = @quantidade
+                WHERE cod_bolsafixa = @cod_bolsafixa;",
+                new
+                {
+                    bolsaFixa.cod_bolsafixa,
+                    bolsaFixa.codcompladicional,
+                    quantidade = bolsaFixa.quantidade ?? 0
+                });
             return null; // sucesso
         }
         catch (NpgsqlException ex) when (ex.InnerException is PostgresException pgEx)
@@ -944,10 +959,10 @@ public partial class BolsaFixaViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            using DatabaseContext db = new();
-            var tipoBolsaExistente = await db.BolsaFixas.FindAsync(bolsaFixa.cod_bolsafixa);
-            db.BolsaFixas.Remove(tipoBolsaExistente);
-            await db.SaveChangesAsync();
+            await using var conn = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            await conn.ExecuteAsync(@"
+                DELETE FROM almoxarifado_apoio.tblbolsafixa
+                WHERE cod_bolsafixa = @cod_bolsafixa;", new { bolsaFixa.cod_bolsafixa });
             return null; // sucesso
         }
         catch (NpgsqlException ex) when (ex.InnerException is PostgresException pgEx)
@@ -969,8 +984,11 @@ public partial class BolsaFixaViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            using DatabaseContext db = new();
-            Produto = await db.Descricoes.FirstOrDefaultAsync(p => p.codcompladicional == codcompleadicional);
+            await using var conn = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            Produto = await conn.QueryFirstOrDefaultAsync<QryDescricaoModel>(@"
+                SELECT *
+                FROM producao.qry3descricoes
+                WHERE codcompladicional = @codcompleadicional;", new { codcompleadicional });
             return null; // sucesso
         }
         catch (NpgsqlException ex) when (ex.InnerException is PostgresException pgEx)

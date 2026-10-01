@@ -1,20 +1,12 @@
 ﻿using Almoxarifado.DataBase;
 using Almoxarifado.DataBase.Model;
-using Microsoft.EntityFrameworkCore;
+using Dapper;
 using Npgsql;
-using System.Collections.ObjectModel;
 
 namespace Almoxarifado.Services;
 
 public class ProductService : IProductService
 {
-
-    private readonly DatabaseContext _dbContext;
-
-    public ProductService()
-    {
-        _dbContext = new DatabaseContext();
-    }
 
     public async Task<List<QryDescricaoModel>> GetProductsAsync()
     {
@@ -48,15 +40,16 @@ public class ProductService : IProductService
     {
         try
         {
-            var data = await _dbContext
-                .Descricoes
-                .Where(p => p.planilha != null && p.planilha.StartsWith("ALMOX")) // Verifica se 'planilha' não é nulo antes de chamar StartsWith
-                .OrderBy(c => c.planilha)
-                .ToListAsync();
+            await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+            var data = await conn.QueryAsync<QryDescricaoModel>(@"
+                SELECT *
+                FROM producao.qry3descricoes
+                WHERE planilha IS NOT NULL AND planilha LIKE 'ALMOX%'
+                ORDER BY planilha;");
 
-            return data;
+            return data.ToList();
         }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx)
+        catch (PostgresException pgEx)
         {
             throw new Exception($"Erro do banco: {pgEx.MessageText}\nLocal: {pgEx.Where}");
         }

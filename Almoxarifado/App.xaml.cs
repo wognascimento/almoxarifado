@@ -3,9 +3,11 @@ using Almoxarifado.Localization;
 using BibliotecasSIG;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Net.Http;
 using System.Reflection;
 using System.Text.Json;
+using System.Threading;
 using System.Windows;
 using System.Windows.Markup;
 using Telerik.Windows.Controls;
@@ -17,24 +19,16 @@ namespace Almoxarifado
     /// </summary>
     public partial class App : Application
     {
-        private const string UPDATE_URL = "http://192.168.0.49/downloads/almoxarifado/version.json";
-        private readonly string CURRENT_VERSION = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+        private readonly DataBaseSettings baseSettings = DataBaseSettings.Instance;
+        private readonly string currentVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
+        private bool checkingForUpdates;
 
         public App()
         {
-            // Add your Syncfusion license key for WPF platform with corresponding Syncfusion NuGet version referred in project. For more information about license key see https://help.syncfusion.com/common/essential-studio/licensing/license-key.
-            // Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Add your license key here"); 
-
-            
-            //Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("MjM5MkAzMjM0MkUzMTJFMzlZRnNmeEdKa0haRGU0S0MyZUR3b05vcDJFNURBbnFRTi9STUVidExydWswPQ==");
-            Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("MTU4NUAzMjM3MkUzMTJFMzluT08wbzRnYm4zUlFDOVRzWVpYbUtuSEl0aUhTZmNMYjQxekhrV0NVRnlzPQ==");
-
-            DataBaseSettings BaseSettings = DataBaseSettings.Instance;
-            BaseSettings.Database = DateTime.Now.Year.ToString();
-            BaseSettings.Host = "192.168.0.23";
-            BaseSettings.Username = Environment.UserName;
-            BaseSettings.Password = "123mudar";
-            BaseSettings.ConnectionString = $"Host={BaseSettings.Host};Database={BaseSettings.Database};Username={BaseSettings.Username};Password={BaseSettings.Password}";
+            EventManager.RegisterClassHandler(typeof(RadGridView), FrameworkElement.LoadedEvent,
+                new RoutedEventHandler(OnGridLoaded));
+            baseSettings.LoadFromConfiguration();
+            StyleManager.ApplicationTheme = new Office2016Theme();
 
             LocalizationManager.Manager = new LocalizationManager()
             {
@@ -45,41 +39,61 @@ namespace Almoxarifado
 
         protected override async void OnStartup(StartupEventArgs e)
         {
-            var culture = new CultureInfo("pt-BR");
-
-            // Define cultura padrão para todas as threads
-            CultureInfo.DefaultThreadCurrentCulture = culture;
-            CultureInfo.DefaultThreadCurrentUICulture = culture;
-
-            // Faz o WPF usar essa cultura para Bindings (números/datas)
-            FrameworkElement.LanguageProperty.OverrideMetadata(
-                typeof(FrameworkElement),
-                new FrameworkPropertyMetadata(
-                    XmlLanguage.GetLanguage(culture.IetfLanguageTag)));
-
+            AplicarCulturaPadrao();
 
             base.OnStartup(e);
 
-            // Verificação de atualização em segundo plano
-            await CheckForUpdatesAsync();
+            await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            await CheckForUpdatesAsync(showMessages: false);
+        }
+
+        private static void OnGridLoaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is not RadGridView grid) return;
+            grid.FilterOperatorsLoading -= OnFilterOperatorsLoading;
+            grid.FilterOperatorsLoading += OnFilterOperatorsLoading;
+        }
+
+        private static void OnFilterOperatorsLoading(object sender, Telerik.Windows.Controls.GridView.FilterOperatorsLoadingEventArgs e)
+        {
+            if (e.AvailableOperators.Contains(Telerik.Windows.Data.FilterOperator.Contains))
+            {
+                e.DefaultOperator1 = Telerik.Windows.Data.FilterOperator.Contains;
+                e.DefaultOperator2 = Telerik.Windows.Data.FilterOperator.Contains;
+            }
         }
 
 
-        private async Task CheckForUpdatesAsync()
+        internal async Task CheckForUpdatesAsync(bool showMessages = true)
         {
+            if (checkingForUpdates) return;
+            checkingForUpdates = true;
             try
             {
-                var updateChecker = new UpdateChecker(UPDATE_URL, CURRENT_VERSION);
+                if (string.IsNullOrWhiteSpace(baseSettings.UpdateInfoUrl))
+                {
+                    if (showMessages)
+                        MessageBox.Show("O endereco de atualizacao nao esta configurado.", "Atualizacao do sistema");
+                    return;
+                }
+
+                var updateChecker = new UpdateChecker(baseSettings.UpdateInfoUrl, currentVersion);
                 var updateInfo = await updateChecker.CheckForUpdatesAsync();
 
-                var updateInfoJson = JsonSerializer.Serialize<UpdateInfo>(updateInfo);
+                if (updateInfo == null)
+                {
+                    if (showMessages)
+                        MessageBox.Show($"O sistema ja esta atualizado.\n\nVersao instalada: {currentVersion}",
+                            "Atualizacao do sistema", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
 
                 if (updateInfo != null)
                 {
                     // Pergunta ao usuário se deseja atualizar
                     var result = MessageBox.Show(
                         $"Nova versão disponível!\n\n" +
-                        $"Versão atual: {CURRENT_VERSION}\n" +
+                        $"Versão atual: {currentVersion}\n" +
                         $"Nova versão: {updateInfo.updateVersion}\n\n" +
                         "Changelog:\n" +
                         string.Join("\n", updateInfo.changelog) +
@@ -91,21 +105,29 @@ namespace Almoxarifado
 
                     if (result == MessageBoxResult.Yes)
                     {
+                        showMessages = true;
 
-                        var options = new JsonSerializerOptions { WriteIndented = true };
-                        string jsonString = JsonSerializer.Serialize(updateInfo, options);
+                        string updateExecutable = Path.Combine(AppContext.BaseDirectory, "Update.exe");
+                        if (!File.Exists(updateExecutable))
+                            throw new FileNotFoundException("O atualizador Update.exe nao foi encontrado.", updateExecutable);
 
-                        //Process.Start("Update.exe", @$"{updateInfoJson}, Almoxarifado.exe");
-
-                        string jsonData = JsonSerializer.Serialize(updateInfo); // Garante que o JSON está bem formatado
-                        string appName = "Almoxarifado.exe";
-
-                        string arguments = $"\"{jsonData.Replace("\"", "\\\"")}\" \"{appName}\"";
-                        Process.Start("Update.exe", arguments);
+                        var startInfo = new ProcessStartInfo(updateExecutable)
+                        {
+                            UseShellExecute = true,
+                            WorkingDirectory = AppContext.BaseDirectory
+                        };
+                        startInfo.ArgumentList.Add(JsonSerializer.Serialize(updateInfo));
+                        startInfo.ArgumentList.Add("Almoxarifado.exe");
+                        if (Process.Start(startInfo) == null)
+                            throw new InvalidOperationException("Nao foi possivel iniciar o atualizador.");
                         this.Shutdown();
 
                     }
                 }
+            }
+            catch (Exception ex) when (!showMessages)
+            {
+                Trace.TraceWarning("Falha na verificacao automatica de atualizacao: {0}", ex.Message);
             }
             catch (HttpRequestException ex)
             {
@@ -126,6 +148,26 @@ namespace Almoxarifado
                     MessageBoxImage.Error
                 );
             }
+            finally
+            {
+                checkingForUpdates = false;
+            }
+        }
+
+        private static void AplicarCulturaPadrao()
+        {
+            var culture = CultureInfo.GetCultureInfo("pt-BR");
+
+            CultureInfo.DefaultThreadCurrentCulture = culture;
+            CultureInfo.DefaultThreadCurrentUICulture = culture;
+            Thread.CurrentThread.CurrentCulture = culture;
+            Thread.CurrentThread.CurrentUICulture = culture;
+
+            FrameworkElement.LanguageProperty.OverrideMetadata(
+                typeof(FrameworkElement),
+                new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(culture.IetfLanguageTag)));
+
+            GridViewResources.Culture = culture;
         }
     }
 }

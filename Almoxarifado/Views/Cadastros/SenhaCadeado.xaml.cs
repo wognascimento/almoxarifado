@@ -1,7 +1,7 @@
 ﻿using Almoxarifado.DataBase;
 using Almoxarifado.DataBase.Model;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Microsoft.EntityFrameworkCore;
+using Dapper;
 using Npgsql;
 using System.Collections.ObjectModel;
 using System.Windows;
@@ -23,6 +23,7 @@ public partial class SenhaCadeado : UserControl
 
     private async void UserControl_Loaded(object sender, System.Windows.RoutedEventArgs e)
     {
+        Loaded -= UserControl_Loaded;
         try
         {
             Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = Cursors.Wait; });
@@ -32,7 +33,7 @@ public partial class SenhaCadeado : UserControl
             await vm.GetSenhasAsync();
             Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
         }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx)
+        catch (PostgresException pgEx)
         {
             Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
             MessageBox.Show($"Erro do banco: {pgEx.MessageText}\nLocal: {pgEx.Where}");
@@ -55,7 +56,7 @@ public partial class SenhaCadeado : UserControl
             await vm.AdicionarSenhaAsync(dado);
             Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
         }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx)
+        catch (PostgresException pgEx)
         {
             Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = null; });
             MessageBox.Show($"Erro do banco: {pgEx.MessageText}\nLocal: {pgEx.Where}");
@@ -81,37 +82,59 @@ public partial class SenhaCadeadoViewModel : ObservableObject
 
     public async Task GetSenhasAsync()
     {
-        using DatabaseContext db = new();
-        var data = await db.ApoioSenhaCadeados.ToListAsync();
+        await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+        var data = await conn.QueryAsync<AlmoxarifadoApoioCadeadoModel>(@"
+            SELECT cod_linha_cadeado, nome_bolsa, cadeado, senha, montador, sigla, lacre
+            FROM almoxarifado_apoio.tbl_cadeados
+            ORDER BY cod_linha_cadeado;");
         Senhas = new ObservableCollection<AlmoxarifadoApoioCadeadoModel>(data);
     }
 
     public async Task GetBolsasAsync()
     {
-        using DatabaseContext db = new();
-        var data = await db.TipoBolsas.OrderBy(c => c.codigo_tipobolsa).ToListAsync();
+        await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+        var data = await conn.QueryAsync<TipoBolsaModel>(@"
+            SELECT codigo_tipobolsa, descricao, codcompladicional
+            FROM almoxarifado_apoio.tbltipobolsa
+            ORDER BY codigo_tipobolsa;");
         Bolsas = new ObservableCollection<TipoBolsaModel>(data);
     }
 
     public async Task GetAprovadosAsync()
     {
-        using DatabaseContext db = new();
-        var result = await db.Aprovados
-            .OrderBy(f => f.sigla)
-            .ThenBy(f => f.sigla_serv)
-            .ToListAsync();
+        await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+        var result = await conn.QueryAsync<AprovadoModel>(@"
+            SELECT id_aprovado, sigla, sigla_serv, nome
+            FROM producao.t_aprovados
+            ORDER BY sigla, sigla_serv;");
         Aprovados = new ObservableCollection<AprovadoModel>(result);
     }
 
     public async Task AdicionarSenhaAsync(AlmoxarifadoApoioCadeadoModel model)
     {
-        using DatabaseContext db = new();
-        var modelExistente = await db.ApoioSenhaCadeados.FindAsync(model.cod_linha_cadeado);
-        if (modelExistente == null)
-            await db.ApoioSenhaCadeados.AddAsync(model);
-        else
-            db.Entry(modelExistente).CurrentValues.SetValues(model);
+        await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+        if (model.cod_linha_cadeado is null or 0)
+        {
+            model.cod_linha_cadeado = await conn.ExecuteScalarAsync<long>(@"
+                INSERT INTO almoxarifado_apoio.tbl_cadeados
+                    (nome_bolsa, cadeado, senha, montador, sigla, lacre)
+                VALUES
+                    (@nome_bolsa, @cadeado, @senha, @montador, @sigla, @lacre)
+                RETURNING cod_linha_cadeado;", model);
+            return;
+        }
 
-        await db.SaveChangesAsync();
+        await conn.ExecuteAsync(@"
+            INSERT INTO almoxarifado_apoio.tbl_cadeados
+                (cod_linha_cadeado, nome_bolsa, cadeado, senha, montador, sigla, lacre)
+            VALUES
+                (@cod_linha_cadeado, @nome_bolsa, @cadeado, @senha, @montador, @sigla, @lacre)
+            ON CONFLICT (cod_linha_cadeado) DO UPDATE SET
+                nome_bolsa = EXCLUDED.nome_bolsa,
+                cadeado = EXCLUDED.cadeado,
+                senha = EXCLUDED.senha,
+                montador = EXCLUDED.montador,
+                sigla = EXCLUDED.sigla,
+                lacre = EXCLUDED.lacre;", model);
     }
 }

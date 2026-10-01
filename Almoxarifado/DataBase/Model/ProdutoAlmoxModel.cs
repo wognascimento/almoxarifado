@@ -1,9 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Almoxarifado.DataBase.Model
 {
-    [Keyless]
     [Table("movimento_almox", Schema = "almoxarifado_jac")]
     public class ProdutoAlmoxModel
     {

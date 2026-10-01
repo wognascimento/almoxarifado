@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Almoxarifado" 
-        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+        xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
         mc:Ignorable="d"
         Title="SISTEMA INTEGRADO DE GERENCIAMENTO - ALMOXARIFADO"
         Height="450" Width="800" WindowState="Maximized" Loaded="Window_Loaded">
@@ -18,57 +18,58 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <syncfusion:MenuAdv
-            Grid.Row="0" 
-            ScrollViewer.HorizontalScrollBarVisibility="Visible" 
-            PopUpAnimationType="Slide" 
-            VerticalAlignment="Center" 
-            VerticalContentAlignment="Center">
+        <telerik:RadMenu Grid.Row="0">
 
-            <syncfusion:MenuItemAdv Header="Cadastro">
-                <syncfusion:MenuItemAdv Header="Atendentes" Click="OnCadastroAtendenteClick"/>
-                <syncfusion:MenuItemAdv Header="Terceiros" Click="OnCadastroTerceiro"/>
-                <syncfusion:MenuItemAdv Header="Bolsa" Click="OnCadastroBolsa"/>
-                <syncfusion:MenuItemAdv Header="Bolsa Fixa" Click="OnCadastroBocaFixa"/>
-                <syncfusion:MenuItemAdv Header="Senha Cadeado" Click="OnSenhaCadeadoClick"/>
-            </syncfusion:MenuItemAdv>
+            <telerik:RadMenuItem Header="Cadastro">
+                <telerik:RadMenuItem Header="Atendentes" Click="OnCadastroAtendenteClick"/>
+                <telerik:RadMenuItem Header="Terceiros" Click="OnCadastroTerceiro"/>
+                <telerik:RadMenuItem Header="Bolsa" Click="OnCadastroBolsa"/>
+                <telerik:RadMenuItem Header="Bolsa Fixa" Click="OnCadastroBocaFixa"/>
+                <telerik:RadMenuItem Header="Senha Cadeado" Click="OnSenhaCadeadoClick"/>
+            </telerik:RadMenuItem>
 
-            <syncfusion:MenuItemAdv Header="Movimentações">
+            <telerik:RadMenuItem Header="Movimentações">
 
-                <syncfusion:MenuItemAdv Header="Saída" Click="OnAlmoxSaidaClick"/>
-                <syncfusion:MenuItemAdv Header="Entrada" Click="OnAlmoxEntradaClick"/>
+                <telerik:RadMenuItem Header="Saída" Click="OnAlmoxSaidaClick"/>
+                <telerik:RadMenuItem Header="Entrada" Click="OnAlmoxEntradaClick"/>
 
-                <syncfusion:MenuItemAdv Header="Bolsa de Ferramenta">
+                <telerik:RadMenuItem Header="Bolsa de Ferramenta">
 
-                    <syncfusion:MenuItemAdv Header="Saída" Click="OnBolsaSaidaClick"/>
-                    <syncfusion:MenuItemAdv Header="Entrada" Click="OnBolsaEntradaClick"/>
+                    <telerik:RadMenuItem Header="Saída" Click="OnBolsaSaidaClick"/>
+                    <telerik:RadMenuItem Header="Entrada" Click="OnBolsaEntradaClick"/>
 
-                </syncfusion:MenuItemAdv>
+                </telerik:RadMenuItem>
                 
-            </syncfusion:MenuItemAdv>
+            </telerik:RadMenuItem>
 
-            <syncfusion:MenuItemAdv Header="Consultas">
-                <syncfusion:MenuItemAdv Header="Produtos Almoxarifado" Click="OnProdutosAlmoxarifado"/>
-                <syncfusion:MenuItemAdv Header="Movimentações de Saída" Click="OnMovSaida"/>
-                <syncfusion:MenuItemAdv Header="Movimentações de Entrada" Click="OnMovEntrada"/>
-                <syncfusion:MenuItemAdv Header="Saldo Funcionário" Click="OnSaldoFuncionarioClick"/>
-                <syncfusion:MenuItemAdv Header="Ponto de Pedido" Click="OnPontoPedidoClick"/>
-                <syncfusion:MenuItemAdv Header="Saldo Estoque" Click="OnSaldoEstoqueClick"/>
-                <syncfusion:MenuItemAdv Header="Bolsa de Ferramenta" Click="OnMovBolsaClick"/>
+            <telerik:RadMenuItem Header="Consultas">
+                <telerik:RadMenuItem Header="Produtos Almoxarifado" Click="OnProdutosAlmoxarifado"/>
+                <telerik:RadMenuItem Header="Movimentações de Saída" Click="OnMovSaida"/>
+                <telerik:RadMenuItem Header="Movimentações de Entrada" Click="OnMovEntrada"/>
+                <telerik:RadMenuItem Header="Saldo Funcionário" Click="OnSaldoFuncionarioClick"/>
+                <telerik:RadMenuItem Header="Ponto de Pedido" Click="OnPontoPedidoClick"/>
+                <telerik:RadMenuItem Header="Saldo Estoque" Click="OnSaldoEstoqueClick"/>
+                <telerik:RadMenuItem Header="Bolsa de Ferramenta" Click="OnMovBolsaClick"/>
 
 
 
-            </syncfusion:MenuItemAdv>
+            </telerik:RadMenuItem>
 
-        </syncfusion:MenuAdv>
+            <telerik:RadMenuItem Header="Outros">
+                <telerik:RadMenuItem Header="Atualizar Sistema" Click="OnAtualizarSistemaClick"/>
+            </telerik:RadMenuItem>
+        </telerik:RadMenu>
 
-        <syncfusion:DocumentContainer
-            Name="_mdi" 
-            Grid.Row="1" 
-            EnableAutoScroll="True"
-            Mode="TDI"
-            CloseButtonClick="_mdi_CloseButtonClick"
-            CloseAllTabs="_mdi_CloseAllTabs"/>
+        <telerik:RadDocking
+            x:Name="radDocking"
+            Grid.Row="1"
+            HasDocumentHost="True">
+            <telerik:RadDocking.DocumentHost>
+                <telerik:RadSplitContainer>
+                    <telerik:RadPaneGroup x:Name="documentGroup"/>
+                </telerik:RadSplitContainer>
+            </telerik:RadDocking.DocumentHost>
+        </telerik:RadDocking>
 
 
         <StatusBar Grid.Row="2">
@@ -92,7 +93,7 @@
                 <TextBlock x:Name="txtUsername"/>
             </StatusBarItem>
             <StatusBarItem Grid.Column="2">
-                <syncfusion:SfLinearProgressBar x:Name="PbLoading" Height="20" Progress="80" Width="100" IsIndeterminate="True" Visibility="Hidden"/>
+                <telerik:RadProgressBar x:Name="PbLoading" Height="20" Width="100" IsIndeterminate="True" Visibility="Hidden"/>
             </StatusBarItem>
             <StatusBarItem Grid.Column="3">
                 <Image Source="/icones/configuracao-de-dados-windows-metro-16.png" Width="16" Height="16" MouseDown="OnAlterarAno"/>

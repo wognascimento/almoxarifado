@@ -1,6 +1,6 @@
-﻿using Almoxarifado.DataBase;
+using Almoxarifado.DataBase;
 using Almoxarifado.DataBase.Model;
-using Microsoft.EntityFrameworkCore;
+using Dapper;
 using Npgsql;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -16,6 +16,11 @@ namespace Almoxarifado.Views.Cadastros
     /// </summary>
     public partial class Terceiro : UserControl
     {
+    private void OnRowValidating(object sender, Telerik.Windows.Controls.GridViewRowValidatingEventArgs e)
+    {
+        if (e.Row?.Item is not TerceiroModel item) return;
+        ValidatedGridSave.Save(sender, e, () => ((TerceiroViewModel)DataContext).SalvarTerceiroAsync(item));
+    }
         public Terceiro()
         {
             InitializeComponent();
@@ -24,6 +29,7 @@ namespace Almoxarifado.Views.Cadastros
 
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            Loaded -= UserControl_Loaded;
             try
             {
                 Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = Cursors.Wait; });
@@ -48,7 +54,7 @@ namespace Almoxarifado.Views.Cadastros
         {
             if (e.Cell.Column.UniqueName == "nome")
             {
-                if (e.NewValue.ToString() == string.Empty)
+                if (string.IsNullOrWhiteSpace(e.NewValue?.ToString()))
                 {
                     e.IsValid = false;
                     e.ErrorMessage = "Informe o nome do Terceiro.";
@@ -57,7 +63,7 @@ namespace Almoxarifado.Views.Cadastros
             }
             else if (e.Cell.Column.UniqueName == "apelido")
             {
-                if (e.NewValue.ToString() == string.Empty)
+                if (string.IsNullOrWhiteSpace(e.NewValue?.ToString()))
                 {
                     e.IsValid = false;
                     e.ErrorMessage = "Informe o apelido do Terceiro.";
@@ -66,7 +72,7 @@ namespace Almoxarifado.Views.Cadastros
             /*
             else if (e.Cell.Column.UniqueName == "razao_social")
             {
-                if (e.NewValue.ToString() == string.Empty)
+                if (string.IsNullOrWhiteSpace(e.NewValue?.ToString()))
                 {
                     e.IsValid = false;
                     e.ErrorMessage = "Informe a razao_social do Terceiro.";
@@ -75,7 +81,7 @@ namespace Almoxarifado.Views.Cadastros
             */
             else if (e.Cell.Column.UniqueName == "rg")
             {
-                if (e.NewValue.ToString() == string.Empty)
+                if (string.IsNullOrWhiteSpace(e.NewValue?.ToString()))
                 {
                     e.IsValid = false;
                     e.ErrorMessage = "Informe o R.G do Terceiro.";
@@ -83,7 +89,7 @@ namespace Almoxarifado.Views.Cadastros
             }
             else if (e.Cell.Column.UniqueName == "municipio")
             {
-                if (e.NewValue.ToString() == string.Empty)
+                if (string.IsNullOrWhiteSpace(e.NewValue?.ToString()))
                 {
                     e.IsValid = false;
                     e.ErrorMessage = "Informe o municipio do Terceiro.";
@@ -91,7 +97,7 @@ namespace Almoxarifado.Views.Cadastros
             }
             else if (e.Cell.Column.UniqueName == "tipo_prestacao_servico")
             {
-                if (e.NewValue.ToString() == string.Empty)
+                if (string.IsNullOrWhiteSpace(e.NewValue?.ToString()))
                 {
                     e.IsValid = false;
                     e.ErrorMessage = "Informe o tipo de prestação de serviço do Terceiro.";
@@ -99,42 +105,7 @@ namespace Almoxarifado.Views.Cadastros
             }
         }
 
-        private async void OnRowInsertDados(object sender, Telerik.Windows.Controls.GridViewRowEditEndedEventArgs e)
-        {
-            try
-            {
-                TerceiroViewModel vm = (TerceiroViewModel)DataContext;
 
-                if (e.EditAction == GridViewEditAction.Cancel)
-                {
-                    return;
-                }
-                if (e.EditOperationType == GridViewEditOperationType.Insert)
-                {
-                    var terceiro = await vm.SalvarTerceiroAsync((TerceiroModel)e.NewData);
-                    var updatedObject = (TerceiroModel)this.TerceirosGridView.CurrentItem;
-
-                    this.TerceirosGridView.CurrentItem = terceiro;
-                    TerceirosGridView.Items.Refresh();
-                }
-                if (e.EditOperationType == GridViewEditOperationType.Edit)
-                {
-                    var terceiro = await vm.SalvarTerceiroAsync((TerceiroModel)e.NewData);
-                    var updatedObject = (TerceiroModel)this.TerceirosGridView.CurrentItem;
-
-                    this.TerceirosGridView.CurrentItem = terceiro;
-                    TerceirosGridView.Items.Refresh();
-                }
-            }
-            catch (PostgresException ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-        }
 
     }
 
@@ -161,8 +132,11 @@ namespace Almoxarifado.Views.Cadastros
         {
             try
             {
-                using DatabaseContext db = new();
-                var data = await db.Terceiros.OrderBy(c => c.nome).ToListAsync();
+                await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+                var data = await conn.QueryAsync<TerceiroModel>(@"
+                    SELECT nome, apelido, razao_social, rg, municipio, tipo_prestacao_servico, codfun
+                    FROM almoxarifado_jac.tbl_terceiro
+                    ORDER BY nome;");
                 return new ObservableCollection<TerceiroModel>(data);
             }
             catch (Exception)
@@ -173,11 +147,26 @@ namespace Almoxarifado.Views.Cadastros
 
         public async Task<TerceiroModel> SalvarTerceiroAsync(TerceiroModel terceiro)
         {
+            if (string.IsNullOrWhiteSpace(terceiro.nome) || string.IsNullOrWhiteSpace(terceiro.apelido) ||
+                string.IsNullOrWhiteSpace(terceiro.rg) || string.IsNullOrWhiteSpace(terceiro.municipio) ||
+                string.IsNullOrWhiteSpace(terceiro.tipo_prestacao_servico))
+                throw new InvalidOperationException("Preencha nome, apelido, RG, municipio e tipo de prestacao de servico.");
             try
             {
-                using DatabaseContext db = new();
-                await db.Terceiros.SingleMergeAsync(terceiro);
-                await db.SaveChangesAsync();
+                await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+                await conn.ExecuteAsync(@"
+                    INSERT INTO almoxarifado_jac.tbl_terceiro
+                        (nome, apelido, razao_social, rg, municipio, tipo_prestacao_servico, codfun)
+                    VALUES
+                        (@nome, @apelido, @razao_social, @rg, @municipio, @tipo_prestacao_servico, @codfun)
+                    ON CONFLICT (codfun)
+                    DO UPDATE SET
+                        nome = EXCLUDED.nome,
+                        apelido = EXCLUDED.apelido,
+                        razao_social = EXCLUDED.razao_social,
+                        rg = EXCLUDED.rg,
+                        municipio = EXCLUDED.municipio,
+                        tipo_prestacao_servico = EXCLUDED.tipo_prestacao_servico;", terceiro);
 
                 return terceiro;
             }

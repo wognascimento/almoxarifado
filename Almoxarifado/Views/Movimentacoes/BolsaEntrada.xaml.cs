@@ -1,13 +1,10 @@
 ﻿using Almoxarifado.DataBase;
 using Almoxarifado.DataBase.Model;
 using Almoxarifado.DataBase.Model.DTO;
+using ClosedXML.Excel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Dapper;
-using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using Syncfusion.ExcelToPdfConverter;
-using Syncfusion.Pdf;
-using Syncfusion.XlsIO;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -34,6 +31,7 @@ public partial class BolsaEntrada : UserControl
 
     private async void UserControl_Loaded(object sender, RoutedEventArgs e)
     {
+        Loaded -= UserControl_Loaded;
         BolsaEntradaViewModel vm = (BolsaEntradaViewModel)DataContext;
         List<string> erros = [];
 
@@ -71,7 +69,7 @@ public partial class BolsaEntrada : UserControl
     {
         //var bolsa = SiglaBolsaGrid.Items.CurrentItem as BolsaSaidaFuncDestinoDTO;
         var row = (e.OriginalSource as FrameworkElement)?.ParentOfType<GridViewRow>();
-        var bolsa = row.Item as BolsaSaidaFuncDestinoDTO;
+        var bolsa = row?.Item as BolsaSaidaFuncDestinoDTO;
 
         //var codBolsa = this.bolsa.SelectedItem is TipoBolsaModel bolsa ? bolsa.codigo_tipobolsa : null;
         //var codFunc = funcionarios.SelectedItem is FuncionarioModel funcionario ? funcionario.codfun : null;
@@ -108,16 +106,16 @@ public partial class BolsaEntrada : UserControl
         var codFuncionario = this.funcionarios.SelectedItem is FuncionarioModel f ? f.codfun : null;
         try
         {
-            using ExcelEngine excelEngine = new();
-            IApplication application = excelEngine.Excel;
-            application.DefaultVersion = ExcelVersion.Excel2016;
-            // Abre o arquivo modelo
-            FileStream inputStream = new(@$"{BaseSettings.CaminhoSistema}Modelos\RECIBO_SAIDA.xlsx", FileMode.Open, FileAccess.Read);
-            IWorkbook workbook = application.Workbooks.Open(inputStream);
-            IWorksheet worksheet = workbook.Worksheets[0];
+            var modelo = Path.Combine(BaseSettings.CaminhoSistema, "Modelos", "RECIBO_SAIDA.xlsx");
+            var destino = Path.Combine(BaseSettings.CaminhoSistema, "Impressos", $"RECIBO_RETORNO-{codFuncionario}-{descricaoBolsa.codigo_bolsa}.xlsx");
+            Directory.CreateDirectory(Path.GetDirectoryName(destino) ?? ".");
+
+            using var workbook = new XLWorkbook(modelo);
+            var worksheet = workbook.Worksheet(1);
+
             // Preenche células fixas
-            worksheet.Range["B5"].Text = $"{descricaoBolsa.descricao} - {descricaoBolsa.destino_shop}";
-            worksheet.Range["E11"].Text = nomeFuncionario;
+            worksheet.Cell("B5").Value = $"{descricaoBolsa.descricao} - {descricaoBolsa.destino_shop}";
+            worksheet.Cell("E11").Value = nomeFuncionario;
 
             int linhaInicial = 8; // Inserir a partir da linha 11
 
@@ -127,49 +125,31 @@ public partial class BolsaEntrada : UserControl
 
             foreach (var item in lista)
             {
-                worksheet.Range[@$"A{linhaInicial}"].Number = Convert.ToDouble(item.codcompladicional);
+                worksheet.Cell($"A{linhaInicial}").Value = Convert.ToDouble(item.codcompladicional);
 
-                worksheet.Range[@$"B{linhaInicial}:C{linhaInicial}"].Merge();
-                worksheet.Range[@$"B{linhaInicial}:C{linhaInicial}"].Text = item.planilha;
+                worksheet.Range($"B{linhaInicial}:C{linhaInicial}").Merge();
+                worksheet.Cell($"B{linhaInicial}").Value = item.planilha;
 
-                worksheet.Range[@$"D{linhaInicial}:H{linhaInicial}"].Merge();
-                worksheet.Range[@$"D{linhaInicial}:H{linhaInicial}"].Text = item?.descricao_completa?.Replace("ÚNICO", null);
+                worksheet.Range($"D{linhaInicial}:H{linhaInicial}").Merge();
+                worksheet.Cell($"D{linhaInicial}").Value = item?.descricao_completa?.Replace("ÚNICO", null);
 
-                worksheet.Range[@$"I{linhaInicial}"].Text = item.unidade;
+                worksheet.Cell($"I{linhaInicial}").Value = item.unidade;
 
-                worksheet.Range[@$"J{linhaInicial}"].Number = Convert.ToDouble(item.quantidade);
+                worksheet.Cell($"J{linhaInicial}").Value = Convert.ToDouble(item.quantidade);
 
-                worksheet.Range[@$"K{linhaInicial}"].Number = Convert.ToDouble(item.valor_unitario);
+                worksheet.Cell($"K{linhaInicial}").Value = Convert.ToDouble(item.valor_unitario);
 
-                worksheet.Range[@$"L{linhaInicial}"].Number = Convert.ToDouble(item.valor_total);
+                worksheet.Cell($"L{linhaInicial}").Value = Convert.ToDouble(item.valor_total);
 
                 linhaInicial++;
-                worksheet.InsertRow(linhaInicial, 1, ExcelInsertOptions.FormatAsBefore);
+                worksheet.Row(linhaInicial).InsertRowsAbove(1);
             }
 
             linhaInicial += 1;
-            worksheet.Range[@$"L{linhaInicial}"].Formula = $"SUM(L7:L{linhaInicial - 1})";
+            worksheet.Cell($"L{linhaInicial}").FormulaA1 = $"SUM(L7:L{linhaInicial - 1})";
 
-            // Cria o conversor
-            ExcelToPdfConverter converter = new(workbook);
-            ExcelToPdfConverterSettings settings = new()
-            {
-                LayoutOptions = LayoutOptions.FitSheetOnOnePage
-            };
-
-            // Converte para documento PDF
-            PdfDocument pdfDocument = converter.Convert(settings);
-
-            // Salva o PDF
-            using (FileStream outputStream = new(@$"{BaseSettings.CaminhoSistema}Impressos\RECIBO_RETORNO-{codFuncionario}-{descricaoBolsa.codigo_bolsa}.PDF", FileMode.Create, FileAccess.Write))
-            {
-                pdfDocument.Save(outputStream);
-            }
-
-            workbook.Close();
-            inputStream.Close();
-            pdfDocument.Close(true);
-            Process.Start("explorer", @$"{BaseSettings.CaminhoSistema}Impressos\RECIBO_RETORNO-{codFuncionario}-{descricaoBolsa.codigo_bolsa}.PDF");
+            workbook.SaveAs(destino);
+            Process.Start(new ProcessStartInfo(destino) { UseShellExecute = true });
         }
         catch (Exception ex)
         {
@@ -238,23 +218,21 @@ public partial class BolsaEntradaViewModel : ObservableObject
     {
         try
         {
-            using DatabaseContext db = new();
-
-            var funcSaida = db.BolsaSaidas
-                .Select(bs => bs.codfun)
-                .Distinct()
-                .ToList();
-
-            var result = await db.Funcionarios
-                .OrderBy(f => f.nome_apelido)
-                .ThenBy(f => f.setor)
-                .Where(item => funcSaida.Contains(item.codfun))
-                .ToListAsync();
+            await using var conn = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            var result = await conn.QueryAsync<FuncionarioModel>(@"
+                SELECT f.*
+                FROM almoxarifado_jac.view_funcionarios_terceiros f
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM almoxarifado_apoio.tblsaidabolsa s
+                    WHERE s.codfun = f.codfun
+                )
+                ORDER BY f.nome_apelido, f.setor;");
 
             Funcionarios = new ObservableCollection<FuncionarioModel>(result);
             return null; // sucesso
         }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx)
+        catch (PostgresException pgEx)
         {
             return $"Erro do banco: {pgEx.MessageText}\nLocal: {pgEx.Where}";
         }
@@ -364,14 +342,20 @@ public partial class BolsaEntradaViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            using DatabaseContext db = new();
-            var bolsaExistente = await db.BolsaSaidas.FindAsync(bolsaSaida.cod_controlelinha);
-            var novaBolsa = bolsaExistente;
-            novaBolsa.quantidade_retorno = bolsaSaida.quantidade_retorno ?? 0;
-            novaBolsa.retorno_por =Environment.UserName;
-            novaBolsa.data_retorno = DateTime.Now;
-            db.Entry(bolsaExistente).CurrentValues.SetValues(novaBolsa);
-            await db.SaveChangesAsync();
+            await using var conn = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
+            await conn.ExecuteAsync(@"
+                UPDATE almoxarifado_apoio.tblsaidabolsa
+                SET quantidade_retorno = @quantidade_retorno,
+                    retorno_por = @retorno_por,
+                    data_retorno = @data_retorno
+                WHERE cod_controlelinha = @cod_controlelinha;",
+                new
+                {
+                    bolsaSaida.cod_controlelinha,
+                    quantidade_retorno = bolsaSaida.quantidade_retorno ?? 0,
+                    retorno_por = Environment.UserName,
+                    data_retorno = DateTime.Now
+                });
             return null; // sucesso
         }
         catch (NpgsqlException ex) when (ex.InnerException is PostgresException pgEx)

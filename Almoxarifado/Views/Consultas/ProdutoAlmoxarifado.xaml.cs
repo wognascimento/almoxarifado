@@ -1,9 +1,7 @@
-﻿using Almoxarifado.Custom;
+using Almoxarifado.Custom;
 using Almoxarifado.DataBase;
 using Almoxarifado.DataBase.Model;
 using Almoxarifado.Views.Cadastros;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
@@ -90,6 +88,7 @@ namespace Almoxarifado.Views.Consultas
 
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            Loaded -= UserControl_Loaded;
             try
             {
                 Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = Cursors.Wait; });
@@ -279,12 +278,13 @@ namespace Almoxarifado.Views.Consultas
         {
             try
             {
-                using DatabaseContext db = new();
-                var data = await db.Descricoes
-                    .OrderBy(c => c.planilha)
-                    .ThenBy(c => c.descricao)
-                    .Where(c => (c.planilha.Contains("ALMOX") || c.planilha == "ESTOQUE TI") && c.inativo.Contains("0"))
-                    .ToListAsync();
+                await using var conn = new Npgsql.NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+                var data = await Dapper.SqlMapper.QueryAsync<QryDescricaoModel>(conn, @"
+                    SELECT *
+                    FROM producao.qry3descricoes
+                    WHERE (planilha LIKE '%ALMOX%' OR planilha = 'ESTOQUE TI')
+                      AND COALESCE(inativo, '') LIKE '%0%'
+                    ORDER BY planilha, descricao;");
                 return new ObservableCollection<QryDescricaoModel>(data);
             }
             catch (Exception)
@@ -300,33 +300,34 @@ namespace Almoxarifado.Views.Consultas
 
         public async Task SalvarEstoqueInicialAsync(QryDescricaoModel Descricao)
         {
-            using DatabaseContext db = new();
-            var strategy = db.Database.CreateExecutionStrategy();
-            await strategy.ExecuteAsync(async () =>
+            await using var conn = new Npgsql.NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+            await conn.OpenAsync();
+            await using var transaction = await conn.BeginTransactionAsync();
+            try
             {
-                using var transaction = await db.Database.BeginTransactionAsync();
-                try
-                {
-                    var produtoA = await db.EstoqueIniciais.FirstOrDefaultAsync(f => f.codcompladicional == Descricao.codcompladicional);
-                    produtoA.estoque_inicial = Descricao.estoque_inicial;
+                await Dapper.SqlMapper.ExecuteAsync(conn, @"
+                    INSERT INTO almoxarifado_jac.t_estoqueinicial
+                        (codcompladicional, estoque_inicial, estoque_inicial_processado)
+                    VALUES
+                        (@codcompladicional, @estoque_inicial, 0)
+                    ON CONFLICT (codcompladicional)
+                    DO UPDATE SET
+                        estoque_inicial = EXCLUDED.estoque_inicial;",
+                    new { Descricao.codcompladicional, Descricao.estoque_inicial }, transaction);
 
-                    var produtoB = await db.ComplementoAdicionais.FirstOrDefaultAsync(f => f.codcompladicional == Descricao.codcompladicional);
-                    produtoB.estoque_inicial = Descricao.estoque_inicial;
+                await Dapper.SqlMapper.ExecuteAsync(conn, @"
+                    UPDATE producao.tblcomplementoadicional
+                    SET estoque_inicial = @estoque_inicial
+                    WHERE codcompladicional = @codcompladicional;",
+                    new { Descricao.codcompladicional, Descricao.estoque_inicial }, transaction);
 
-                    await db.EstoqueIniciais.SingleMergeAsync(produtoA);
-                    await db.ComplementoAdicionais.SingleMergeAsync(produtoB);
-
-                    await db.SaveChangesAsync();
-
-                    await transaction.CommitAsync();
-                }
-                catch (Exception)
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
-
-            });
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
 
             
         }

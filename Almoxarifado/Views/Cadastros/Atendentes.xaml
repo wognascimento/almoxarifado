@@ -19,7 +19,7 @@
             NewRowPosition="Bottom" 
             GroupRenderMode="Flat" 
             CellValidating="OnCellValidatingDados"
-            RowEditEnded="OnRowInsertDados" 
+            RowValidating="OnRowValidating" 
             Deleting="OnDeleting" >
             <telerik:RadGridView.Columns>
                 <telerik:GridViewDataColumn DataMemberBinding="{Binding nome_funcionario}" Header="Funcionário"/>
