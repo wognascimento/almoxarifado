@@ -668,7 +668,7 @@ namespace Almoxarifado.Views.Movimentacoes
                     FROM almoxarifado_jac.view_funcionarios_terceiros f
                     WHERE EXISTS (
                         SELECT 1
-                        FROM almoxarifado_jac.sig_saldo_funcionario s
+                        FROM almoxarifado_jac.sig_saldo_funcionario_total s
                         WHERE s.codfun = f.codfun
                     )
                     ORDER BY nome;");
