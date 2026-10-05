@@ -689,7 +689,7 @@ namespace Almoxarifado.Views.Movimentacoes
                     SELECT DISTINCT rel.*
                     FROM producao.relplan rel
                     JOIN producao.qry3descricoes descricao ON descricao.planilha = rel.planilha
-                    JOIN almoxarifado_jac.sig_saldo_funcionario saldo ON saldo.codcompladicional = descricao.codcompladicional
+                    JOIN almoxarifado_jac.sig_saldo_funcionario_total saldo ON saldo.codcompladicional = descricao.codcompladicional
                     WHERE saldo.codfun = @codfun
                     ORDER BY rel.planilha;", new { codfun });
 
@@ -729,7 +729,7 @@ namespace Almoxarifado.Views.Movimentacoes
                     SELECT DISTINCT produto.*
                     FROM producao.produtos produto
                     JOIN producao.qry3descricoes descricao ON descricao.codigo = produto.codigo
-                    JOIN almoxarifado_jac.sig_saldo_funcionario saldo ON saldo.codcompladicional = descricao.codcompladicional
+                    JOIN almoxarifado_jac.sig_saldo_funcionario_total saldo ON saldo.codcompladicional = descricao.codcompladicional
                     WHERE saldo.codfun = @codfun
                       AND produto.planilha = @planilha
                     ORDER BY produto.descricao;",
@@ -751,7 +751,7 @@ namespace Almoxarifado.Views.Movimentacoes
                     SELECT DISTINCT adicional.*
                     FROM producao.tabela_desc_adicional adicional
                     JOIN producao.qry3descricoes descricao ON descricao.coduniadicional = adicional.coduniadicional
-                    JOIN almoxarifado_jac.sig_saldo_funcionario saldo ON saldo.codcompladicional = descricao.codcompladicional
+                    JOIN almoxarifado_jac.sig_saldo_funcionario_total saldo ON saldo.codcompladicional = descricao.codcompladicional
                     WHERE saldo.codfun = @codfun
                       AND adicional.codigoproduto = @codigoproduto
                     ORDER BY adicional.descricao_adicional;",
@@ -772,7 +772,7 @@ namespace Almoxarifado.Views.Movimentacoes
                 var data = await conn.QueryAsync<TblComplementoAdicionalModel>(@"
                     SELECT DISTINCT complemento.*
                     FROM producao.tblcomplementoadicional complemento
-                    JOIN almoxarifado_jac.sig_saldo_funcionario saldo ON saldo.codcompladicional = complemento.codcompladicional
+                    JOIN almoxarifado_jac.sig_saldo_funcionario_total saldo ON saldo.codcompladicional = complemento.codcompladicional
                     WHERE saldo.codfun = @codfun
                       AND complemento.coduniadicional = @coduniadicional
                     ORDER BY complemento.complementoadicional;",
