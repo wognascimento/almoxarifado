@@ -114,7 +114,8 @@ try {
         }
         $assemblyVersion = [Reflection.AssemblyName]::GetAssemblyName((Join-Path $publishPath 'Almoxarifado.dll')).Version.ToString()
         if ($assemblyVersion -ne $version) { throw "A DLL gerada tem versao $assemblyVersion; era esperada $version." }
-        # Local database settings must not be shipped or overwrite workstation settings.
+        # Keep configuration out of the update ZIP. Setup.iss installs App.config
+        # separately as the initial DLL configuration, only when absent.
         foreach ($configName in @('Almoxarifado.dll.config', 'Almoxarifado.exe.config', 'App.config')) {
             $configPath = Join-Path $publishPath $configName
             if (Test-Path -LiteralPath $configPath) { Remove-Item -LiteralPath $configPath -Force }

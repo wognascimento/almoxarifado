@@ -154,19 +154,29 @@ namespace Almoxarifado.Views.Cadastros
             try
             {
                 await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
-                await conn.ExecuteAsync(@"
-                    INSERT INTO almoxarifado_jac.tbl_terceiro
-                        (nome, apelido, razao_social, rg, municipio, tipo_prestacao_servico, codfun)
-                    VALUES
-                        (@nome, @apelido, @razao_social, @rg, @municipio, @tipo_prestacao_servico, @codfun)
-                    ON CONFLICT (codfun)
-                    DO UPDATE SET
-                        nome = EXCLUDED.nome,
-                        apelido = EXCLUDED.apelido,
-                        razao_social = EXCLUDED.razao_social,
-                        rg = EXCLUDED.rg,
-                        municipio = EXCLUDED.municipio,
-                        tipo_prestacao_servico = EXCLUDED.tipo_prestacao_servico;", terceiro);
+                if (!terceiro.codfun.HasValue)
+                {
+                    terceiro.codfun = await conn.QuerySingleAsync<long>(@"
+                        INSERT INTO almoxarifado_jac.tbl_terceiro
+                            (nome, apelido, razao_social, rg, municipio, tipo_prestacao_servico)
+                        VALUES
+                            (@nome, @apelido, @razao_social, @rg, @municipio, @tipo_prestacao_servico)
+                        RETURNING codfun;", terceiro);
+                }
+                else
+                {
+                    var affected = await conn.ExecuteAsync(@"
+                        UPDATE almoxarifado_jac.tbl_terceiro
+                        SET nome = @nome,
+                            apelido = @apelido,
+                            razao_social = @razao_social,
+                            rg = @rg,
+                            municipio = @municipio,
+                            tipo_prestacao_servico = @tipo_prestacao_servico
+                        WHERE codfun = @codfun;", terceiro);
+                    if (affected != 1)
+                        throw new InvalidOperationException("O terceiro não foi encontrado. Reabra o cadastro antes de alterar.");
+                }
 
                 return terceiro;
             }
