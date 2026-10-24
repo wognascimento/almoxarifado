@@ -9,11 +9,13 @@ using ClosedXML.Excel;
 using Dapper;
 using Npgsql;
 using System.Configuration;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Telerik.Windows;
 using Telerik.Windows.Controls;
 
 namespace Almoxarifado;
@@ -249,6 +251,32 @@ public partial class MainWindow : Window, IModalService
         workbook.SaveAs(caminho);
     }
 
+    private async Task<DataTable> ConsultarMovimentacoesAsync(string sql)
+    {
+        await using var connection = new NpgsqlConnection(BaseSettings.ConnectionString);
+        await connection.OpenAsync();
+        await using var reader = await connection.ExecuteReaderAsync(sql);
+        var dados = new DataTable();
+        dados.Load(reader);
+        return dados;
+    }
+
+    private static void ExportarXlsx(DataTable dados, string caminho)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(caminho) ?? ".");
+        using var workbook = new XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("Dados");
+        for (int c = 0; c < dados.Columns.Count; c++)
+            worksheet.Cell(1, c + 1).Value = dados.Columns[c].ColumnName;
+        if (dados.Rows.Count > 0)
+            worksheet.Cell(2, 1).InsertData(dados);
+        foreach (DataColumn column in dados.Columns)
+            if (column.DataType == typeof(DateTime) && dados.Rows.Count > 0)
+                worksheet.Range(2, column.Ordinal + 1, dados.Rows.Count + 1, column.Ordinal + 1)
+                    .Style.DateFormat.Format = "dd/MM/yyyy";
+        workbook.SaveAs(caminho);
+    }
+
     private static void AbrirArquivo(string caminho)
     {
         Process.Start(new ProcessStartInfo(caminho)
@@ -390,7 +418,7 @@ public partial class MainWindow : Window, IModalService
         {
             Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = Cursors.Wait; });
 
-            var resultado = await QueryAsync<dynamic>(@"
+            using var resultado = await ConsultarMovimentacoesAsync(@"
                 SELECT
                     sa.cod_movimentacao,
                     sa.cod_saida_almox,
@@ -430,7 +458,7 @@ public partial class MainWindow : Window, IModalService
         {
             Application.Current.Dispatcher.Invoke(() => { Mouse.OverrideCursor = Cursors.Wait; });
 
-            var resultado = await QueryAsync<dynamic>(@"
+            using var resultado = await ConsultarMovimentacoesAsync(@"
                 SELECT
                     sa.cod_movimentacao,
                     sa.cod_entrada_almox,
@@ -514,17 +542,17 @@ public partial class MainWindow : Window, IModalService
         }
     }
 
-    private void OnCadastroBolsa(object sender, RoutedEventArgs e)
+    private void OnCadastroBolsa(object sender, RadRoutedEventArgs e)
     {
         adicionarFilho(new BolsaFerramenta(), "CADASTRAR TIPO DE BOLSA", "CADASTRAR_BOLSA");
     }
 
-    private void OnCadastroBocaFixa(object sender, RoutedEventArgs e)
+    private void OnCadastroBocaFixa(object sender, RadRoutedEventArgs e)
     {
         adicionarFilho(new BolsaFixa(), "CADASTRAR ITENS BOLSA", "CADASTRAR_BOLSA_FIXA");
     }
 
-    private async void OnMovBolsaClick(object sender, RoutedEventArgs e)
+    private async void OnMovBolsaClick(object sender, RadRoutedEventArgs e)
     {
         try
         {
@@ -571,4 +599,5 @@ public partial class MainWindow : Window, IModalService
     {
         adicionarFilho(new SenhaCadeado(), "SENHA CADEADO", "SENHA_CADEADO");
     }
+
 }
