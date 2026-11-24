@@ -107,6 +107,7 @@
                                 <telerik:GridViewDataColumn Header="Bolsa" DataMemberBinding="{Binding descricao}" Width="*"/>
                             </telerik:RadGridView.Columns>
                         </telerik:RadGridView>
+                        <telerik:RadButton Content="Entrada em estoque" Click="OnEntradaEstoque" HorizontalAlignment="Left" Margin="0,8,0,0"/>
                         
                     
                 </StackPanel>
@@ -140,6 +141,7 @@
                 </StackPanel>
 
                 <telerik:RadGridView
+                    x:Name="BolsaItensGrid"
                     Grid.Row="1"
                     Margin="5"
                     ItemsSource="{Binding BolsaItens}"
@@ -154,6 +156,7 @@
                         <telerik:GridViewDataColumn Header="Descrição" IsReadOnly="True" DataMemberBinding="{Binding descricao_completa}" Width="*"/>
                         <telerik:GridViewDataColumn Header="Unidade" IsReadOnly="True" DataMemberBinding="{Binding unidade}" Width="80"/>
                         <telerik:GridViewDataColumn Header="Qtde Retorno" DataMemberBinding="{Binding quantidade_retorno}" DataFormatString="{}{0:N2}" Width="60"/>
+                        <telerik:GridViewDataColumn Header="Ja entrou no estoque" IsReadOnly="True" DataMemberBinding="{Binding entrada_estoque_qtde}" DataFormatString="{}{0:N2}" Width="130"/>
                         <telerik:GridViewDataColumn Header="VL. Unit." IsReadOnly="True" DataMemberBinding="{Binding valor_unitario}" DataFormatString="{}{0:C2}" Width="80"/>
                         <telerik:GridViewDataColumn Header="VL. Tot. Devedor" IsReadOnly="True" DataMemberBinding="{Binding valor_total}" DataFormatString="{}{0:C2}" Width="80"/>
                     </telerik:RadGridView.Columns>

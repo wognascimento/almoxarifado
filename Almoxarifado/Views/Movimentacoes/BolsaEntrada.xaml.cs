@@ -22,6 +22,35 @@ namespace Almoxarifado.Views.Movimentacoes;
 public partial class BolsaEntrada : UserControl
 {
     private readonly DataBaseSettings BaseSettings = DataBaseSettings.Instance;
+    private bool _salvandoRetorno;
+    private bool _abrindoEntrada;
+    private BolsaSaidaFuncDestinoDTO? _bolsaCarregada;
+
+    private async void OnEntradaEstoque(object sender, RoutedEventArgs e)
+    {
+        if (_abrindoEntrada) return;
+        BolsaItensGrid.CommitEdit();
+        if (_salvandoRetorno) { MessageBox.Show("Aguarde a gravacao do retorno e tente novamente."); return; }
+        if (funcionarios.SelectedItem is not FuncionarioModel { codfun: not null } funcionario)
+        { MessageBox.Show("Selecione o funcionario."); return; }
+        _abrindoEntrada = true; MainContent.IsEnabled = false;
+        try
+        {
+            var janela = new BaixaBolsaWindow(checked((int)funcionario.codfun.Value), funcionario.nome_apelido ?? "", entrada: true)
+            { Owner = Window.GetWindow(this) ?? Application.Current.MainWindow };
+            janela.ShowDialog();
+            if (_bolsaCarregada != null && _bolsaCarregada.codfun == funcionario.codfun)
+            {
+                var erro = await ((BolsaEntradaViewModel)DataContext).GetBolsaProdutosAsync(
+                    _bolsaCarregada.codigo_bolsa, funcionario.codfun, _bolsaCarregada.destino_shop);
+                if (erro != null) MessageBox.Show(erro);
+            }
+            if (janela.Movimento.HasValue)
+                MessageBox.Show($"Entrada registrada. Movimentacao: {janela.Movimento}. Novos retornos parciais continuam permitidos.");
+        }
+        catch (Exception ex) { MessageBox.Show(ex.Message, "Entrada em estoque"); }
+        finally { _abrindoEntrada = false; MainContent.IsEnabled = true; }
+    }
 
     public BolsaEntrada()
     {
@@ -53,6 +82,8 @@ public partial class BolsaEntrada : UserControl
 
     private async void funcionarios_SelectionChanged(object sender, Telerik.Windows.Controls.SelectionChangeEventArgs e)
     {
+        _bolsaCarregada = null;
+        ((BolsaEntradaViewModel)DataContext).BolsaItens = [];
         var codFunc = funcionarios.SelectedItem is FuncionarioModel funcionario ? funcionario.codfun : null;
         BolsaEntradaViewModel vm = (BolsaEntradaViewModel)DataContext;
         List<string> erros = [];
@@ -89,6 +120,7 @@ public partial class BolsaEntrada : UserControl
 
         List<string> erros = [];
         string? erro2 = await vm.GetBolsaProdutosAsync(bolsa.codigo_bolsa, bolsa.codfun, bolsa.destino_shop);
+        if (erro2 == null) _bolsaCarregada = bolsa;
         if (!string.IsNullOrEmpty(erro2)) erros.Add(erro2);
 
         if (erros.Count > 0)
@@ -159,10 +191,11 @@ public partial class BolsaEntrada : UserControl
 
     private async void RadGridView_CellEditEnded(object sender, GridViewCellEditEndedEventArgs e)
     {
+        if (e.EditAction == GridViewEditAction.Cancel || _salvandoRetorno || _abrindoEntrada) return;
         if (sender is not RadGridView gridView)
             return;
 
-        var itemBeingEdited = gridView.CurrentCellInfo.Item as BolsaSaidaDTO;
+        if (e.Cell.DataContext is not BolsaSaidaDTO itemBeingEdited) return;
         itemBeingEdited.retorno_em = DateTime.Now;
         itemBeingEdited.retorno_por = Environment.UserName;
 
@@ -174,8 +207,17 @@ public partial class BolsaEntrada : UserControl
         {
             case "Qtde Retorno":
                 //AtualizarQuantidade(itemBeingEdited, e.NewData);
-                string? erroQtde = await vm.AlterarItemBolsaAsync(itemBeingEdited);
-                if (!string.IsNullOrEmpty(erroQtde)) erros.Add(erroQtde);
+                _salvandoRetorno = true;
+                MainContent.IsEnabled = false;
+                string? erroQtde;
+                try { erroQtde = await vm.AlterarItemBolsaAsync(itemBeingEdited); }
+                finally { _salvandoRetorno = false; MainContent.IsEnabled = true; }
+                if (!string.IsNullOrEmpty(erroQtde))
+                {
+                    itemBeingEdited.quantidade_retorno = e.OldData == null ? null : Convert.ToDouble(e.OldData);
+                    gridView.Rebind();
+                    erros.Add(erroQtde);
+                }
                 break;
         }
 
@@ -298,6 +340,7 @@ public partial class BolsaEntradaViewModel : ObservableObject
             string sql = @"
                 SELECT
                     b.cod_controlelinha,
+                    COALESCE((to_jsonb(b)->>'entrada_estoque_qtde')::numeric,0) AS entrada_estoque_qtde,
 	                b.codigo_bolsa,
 	                b.codcompladicional,
 	                p.planilha,
@@ -341,21 +384,29 @@ public partial class BolsaEntradaViewModel : ObservableObject
     {
         try
         {
+            var retorno = bolsaSaida.quantidade_retorno ?? 0;
+            if (!double.IsFinite(retorno) || retorno < 0 || retorno > float.MaxValue ||
+                !bolsaSaida.quantidade.HasValue || retorno > bolsaSaida.quantidade ||
+                Convert.ToDecimal((float)retorno) < bolsaSaida.entrada_estoque_qtde)
+                return "Retorno deve estar entre a quantidade ja registrada no estoque e a quantidade enviada.";
             IsBusy = true;
             await using var conn = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
-            await conn.ExecuteAsync(@"
-                UPDATE almoxarifado_apoio.tblsaidabolsa
+            var alterados = await conn.ExecuteAsync(@"
+                UPDATE almoxarifado_apoio.tblsaidabolsa b
                 SET quantidade_retorno = @quantidade_retorno,
                     retorno_por = @retorno_por,
                     data_retorno = @data_retorno
-                WHERE cod_controlelinha = @cod_controlelinha;",
+                WHERE cod_controlelinha = @cod_controlelinha
+                  AND CAST(@quantidade_retorno AS real)::numeric >= COALESCE((to_jsonb(b)->>'entrada_estoque_qtde')::numeric,0)
+                  AND CAST(@quantidade_retorno AS real) <= b.quantidade;",
                 new
                 {
                     bolsaSaida.cod_controlelinha,
                     quantidade_retorno = bolsaSaida.quantidade_retorno ?? 0,
-                    retorno_por = Environment.UserName,
-                    data_retorno = DateTime.Now
+                    retorno_por = _dataBaseSettings.Username,
+                    data_retorno = DateTime.Today
                 });
+            if (alterados != 1) return "Retorno invalido ou estoque alterado em outra estacao. Atualize a bolsa.";
             return null; // sucesso
         }
         catch (NpgsqlException ex) when (ex.InnerException is PostgresException pgEx)

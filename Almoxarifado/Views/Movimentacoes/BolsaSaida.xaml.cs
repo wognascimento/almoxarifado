@@ -30,6 +30,46 @@ public partial class BolsaSaida : UserControl
     private ProductSearchModal _currentModal;
     private Window _parentWindow;
     private readonly DataBaseSettings BaseSettings = DataBaseSettings.Instance;
+    private bool _salvandoQuantidade;
+    private bool _abrindoBaixa;
+
+    private void BolsaItens_BeginningEdit(object sender, GridViewBeginningEditRoutedEventArgs e)
+    {
+        if (_salvandoQuantidade || _abrindoBaixa || e.Cell.DataContext is BolsaSaidaDTO { baixa_movimentacao: not null })
+            e.Cancel = true;
+    }
+
+    private async void OnBaixaEstoque(object sender, RoutedEventArgs e)
+    {
+        if (_abrindoBaixa) return;
+        BolsaItensGrid.CommitEdit();
+        if (_salvandoQuantidade)
+        {
+            MessageBox.Show("Aguarde a gravacao da quantidade e tente novamente.");
+            return;
+        }
+        if (funcionarios.SelectedItem is not FuncionarioModel { codfun: not null } funcionario)
+        { MessageBox.Show("Selecione o funcionario."); return; }
+        if (MessageBox.Show(Window.GetWindow(this),
+            "Serao somados os produtos pendentes de todas as bolsas deste funcionario, independentemente da sigla. Ao finalizar, os itens ficarao bloqueados para alteracao e nova baixa. Continuar?",
+            "Baixa em estoque", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        _abrindoBaixa = true;
+        MainContent.IsEnabled = false;
+        try
+        {
+            var janela = new BaixaBolsaWindow(checked((int)funcionario.codfun.Value), funcionario.nome_apelido ?? "")
+            { Owner = Window.GetWindow(this) ?? Application.Current.MainWindow };
+            janela.ShowDialog();
+            var vm = (BolsaSaidaViewModel)DataContext;
+            var erro = await vm.GetBolsaProdutosAsync((bolsa.SelectedItem as TipoBolsaModel)?.codigo_tipobolsa,
+                funcionario.codfun, (siglas.SelectedItem as AprovadoModel)?.sigla_serv);
+            if (janela.Movimento.HasValue)
+                MessageBox.Show($"Baixa concluida. Movimentacao: {janela.Movimento}. Itens bloqueados.");
+            if (erro != null) MessageBox.Show(erro);
+        }
+        catch (Exception ex) { MessageBox.Show(ex.Message, "Baixa em estoque"); }
+        finally { _abrindoBaixa = false; MainContent.IsEnabled = true; }
+    }
 
     public BolsaSaida()
     {
@@ -284,6 +324,7 @@ public partial class BolsaSaida : UserControl
 
     private async void RadGridView_CellEditEnded(object sender, GridViewCellEditEndedEventArgs e)
     {
+        if (e.EditAction == GridViewEditAction.Cancel || _salvandoQuantidade) return;
         if (sender is not RadGridView gridView)
             return;
 
@@ -296,8 +337,16 @@ public partial class BolsaSaida : UserControl
         {
             case "Qtde":
                 //AtualizarQuantidade(itemBeingEdited, e.NewData);
-                string? erroQtde = await vm.AlterarItemBolsaAsync(itemBeingEdited);
-                if (!string.IsNullOrEmpty(erroQtde)) erros.Add(erroQtde);
+                _salvandoQuantidade = true;
+                string? erroQtde;
+                try { erroQtde = await vm.AlterarItemBolsaAsync(itemBeingEdited); }
+                finally { _salvandoQuantidade = false; }
+                if (!string.IsNullOrEmpty(erroQtde))
+                {
+                    itemBeingEdited.quantidade = e.OldData == null ? null : Convert.ToDouble(e.OldData, CultureInfo.CurrentCulture);
+                    gridView.Rebind();
+                    erros.Add(erroQtde);
+                }
                 break;
             case "VL. Unit.":
                 AtualizarValorUnitario(itemBeingEdited, e.NewData);
@@ -645,6 +694,9 @@ public partial class BolsaSaidaViewModel : ObservableObject
     private bool isBusy;
 
     [ObservableProperty]
+    private bool bolsaEditavel = true;
+
+    [ObservableProperty]
     private ObservableCollection<FuncionarioModel> funcionarios;
 
     [ObservableProperty]
@@ -783,6 +835,7 @@ public partial class BolsaSaidaViewModel : ObservableObject
             string sql = @"
                 SELECT
                     b.cod_controlelinha,
+                    (to_jsonb(b)->>'baixa_movimentacao')::integer AS baixa_movimentacao,
 	                b.codigo_bolsa,
 	                b.codcompladicional,
 	                p.planilha,
@@ -805,6 +858,7 @@ public partial class BolsaSaidaViewModel : ObservableObject
             await connection.CloseAsync();
 
             BolsaItens = new ObservableCollection<BolsaSaidaDTO>(resultado);
+            BolsaEditavel = !resultado.Any(i => i.baixa_movimentacao.HasValue);
             return null; // sucesso
         }
         catch (NpgsqlException ex) when (ex.InnerException is PostgresException pgEx)
@@ -923,17 +977,22 @@ public partial class BolsaSaidaViewModel : ObservableObject
     {
         try
         {
+            if (bolsaSaida.baixa_movimentacao.HasValue) return "Item ja baixado. Quantidade bloqueada.";
+            if (!bolsaSaida.quantidade.HasValue || !double.IsFinite(bolsaSaida.quantidade.Value) || bolsaSaida.quantidade < 0)
+                return "Informe uma quantidade valida, maior ou igual a zero.";
             IsBusy = true;
             await using var conn = new NpgsqlConnection(_dataBaseSettings.ConnectionString);
-            await conn.ExecuteAsync(@"
-                UPDATE almoxarifado_apoio.tblsaidabolsa
+            var alterados = await conn.ExecuteAsync(@"
+                UPDATE almoxarifado_apoio.tblsaidabolsa b
                 SET quantidade = @quantidade
-                WHERE cod_controlelinha = @cod_controlelinha;",
+                WHERE cod_controlelinha = @cod_controlelinha
+                  AND (to_jsonb(b)->>'baixa_movimentacao') IS NULL;",
                 new
                 {
                     bolsaSaida.cod_controlelinha,
-                    quantidade = bolsaSaida.quantidade ?? 0
+                    quantidade = bolsaSaida.quantidade.Value
                 });
+            if (alterados != 1) return "Item baixado em outra estacao ou removido. Atualize a bolsa.";
             return null; // sucesso
         }
         catch (NpgsqlException ex) when (ex.InnerException is PostgresException pgEx)

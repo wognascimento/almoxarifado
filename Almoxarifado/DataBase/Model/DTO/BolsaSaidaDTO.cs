@@ -2,6 +2,8 @@
 
 public class BolsaSaidaDTO
 {
+    public int? baixa_movimentacao { get; set; }
+    public decimal entrada_estoque_qtde { get; set; }
     public long? cod_controlelinha { get; set; }
     public long? codigo_tipobolsa { get; set; }
     public long? codfun { get; set; }

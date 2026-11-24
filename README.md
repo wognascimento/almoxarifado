@@ -1,5 +1,59 @@
 # Almoxarifado
 
+## Baixa consolidada das bolsas
+
+### Entradas parciais
+
+Em **Bolsa Entrada**, preencha **Qtde Retorno** com o total acumulado devolvido de cada item.
+O botao **Entrada em estoque** considera todas as bolsas do funcionario e soma por produto
+somente `retorno acumulado - quantidade ja registrada no estoque`.
+Exemplo: retorno 5, entrada anterior 3, nova entrada 2. Repetir sem novos retornos nao gera entrada.
+Informe origem, atendente, estado dos materiais, O.S. e endereco opcional; a data e a atual.
+Cada parcial tem vinculo com sua movimentacao em `almoxarifado_apoio.tblbolsa_entradas_estoque`.
+A coluna **Ja entrou no estoque** mostra o acumulado. Retornos abaixo desse valor ou acima
+da quantidade enviada sao recusados. Novos incrementos permanecem permitidos.
+
+Aplicar `scripts/20261123_entrada_bolsas.sql` **depois** do script de baixa abaixo,
+com estacoes fechadas. Conceder USAGE em `almoxarifado_jac.seq_movimentacao_entrada`
+e SELECT/INSERT em `almoxarifado_apoio.tblbolsa_entradas_estoque` aos perfis autorizados.
+Nao conceder UPDATE/DELETE no historico. Atualizar todas as estacoes antes de usar a sequencia.
+Entradas antigas feitas manualmente nao sao identificadas automaticamente: conciliar antes
+de usar o novo controle. Validar permissao, concorrencia e rollback em homologacao.
+
+### Saidas consolidadas
+
+Em Movimentacoes > Bolsa Saida, selecione o funcionario e clique em **Baixa em estoque**.
+O formulario soma por produto os itens ainda nao baixados de todas as bolsas do funcionario,
+independentemente da sigla. Informe destino, atendente, O.S. e endereco (opcional).
+A data e a atual; antes de finalizar, confira as quantidades consolidadas e o aviso de bloqueio.
+
+Antes de distribuir esta versao, o administrador do banco deve executar
+`scripts/20261123_baixa_bolsas.sql` no banco de cada exercicio utilizado.
+O script cria as colunas de vinculo/auditoria e o trigger que protege os itens processados.
+Tambem cria `almoxarifado_jac.seq_movimentacao_saida`: conceda USAGE aos perfis de saida.
+Atualize todas as estacoes e feche movimentacoes antigas antes de usar a nova numeracao;
+a saida normal desta versao passa a usar a mesma sequencia, evitando o antigo MAX + 1.
+O script deve ser aplicado com as estacoes fora de uso.
+Nao efetua baixas retroativas nem identifica saidas feitas manualmente no passado:
+confira essas bolsas antes do primeiro uso para nao duplicar movimentacoes antigas.
+
+A saida e registrada em `almoxarifado_jac.t_saida_almox`, agrupada por produto.
+ACERTO ESTOQUE tambem alimenta `pcp.tbl_controle_almox_estoque`, como na saida normal.
+Movimentacao e bloqueio das bolsas sao confirmados em uma transacao.
+Se os itens mudarem desde a abertura do formulario, a operacao e recusada e deve ser reaberta.
+Itens zerados nao geram saida, mas sao bloqueados junto com a bolsa processada.
+Produtos sem cadastro/barcode valido, quantidades invalidas ou devolucoes anteriores bloqueiam a operacao.
+
+A coluna **Baixa estoque** mostra o numero da movimentacao. Os itens baixados nao permitem
+alteracao ou exclusao, nem inclusao na mesma bolsa/sigla/funcionario; outras bolsas novas
+podem ser cadastradas e baixadas separadamente. Devolucoes continuam em Bolsa Entrada.
+O usuario precisa das permissoes de leitura/gravacao nas tabelas envolvidas e nas sequencias
+ja utilizadas pela saida normal. Nao conceder permissoes administrativas ao aplicativo.
+
+Teste sintetico, sem gravacoes reais:
+`dotnet run --project Tests/BaixaBolsa/BaixaBolsaTests.csproj -c Release`.
+Antes de liberar, validar o script, rollback, duas estacoes concorrentes e uma baixa controlada em homologacao.
+
 ## Visao geral
 
 Controle de materiais, ferramentas e movimentacoes do almoxarifado.

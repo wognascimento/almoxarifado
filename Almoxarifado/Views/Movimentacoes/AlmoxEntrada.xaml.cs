@@ -808,6 +808,8 @@ namespace Almoxarifado.Views.Movimentacoes
             try
             {
                 await using var conn = new NpgsqlConnection(DataBaseSettings.Instance.ConnectionString);
+                if (await conn.ExecuteScalarAsync<bool>("SELECT to_regclass('almoxarifado_jac.seq_movimentacao_entrada') IS NOT NULL"))
+                    return await conn.ExecuteScalarAsync<long>("SELECT nextval('almoxarifado_jac.seq_movimentacao_entrada')");
                 var lastMov = await conn.ExecuteScalarAsync<long?>(@"
                     SELECT MAX(cod_movimentacao)
                     FROM almoxarifado_jac.t_entrada_almox;");

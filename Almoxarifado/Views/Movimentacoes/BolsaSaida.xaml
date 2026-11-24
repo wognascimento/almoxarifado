@@ -7,7 +7,7 @@
              xmlns:converter="clr-namespace:Almoxarifado.Converter"
              xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="1000" Loaded="UserControl_Loaded">
+             d:DesignHeight="768" d:DesignWidth="1024" Loaded="UserControl_Loaded">
 
 
     <UserControl.Resources>
@@ -126,6 +126,7 @@
 
                             <telerik:RadButton 
                                 x:Name="btnAlterar" 
+                                IsEnabled="{Binding BolsaEditavel}"
                                 Grid.Column="2" 
                                 Content="Adicionar Itens Bolsa" 
                                 Click="OnAdicionarItemBolsaClick"/>
@@ -136,6 +137,7 @@
             </StackPanel>
             
              <!-- Novo RadGridView ao lado -->
+            <StackPanel Grid.Row="1" Grid.Column="2" HorizontalAlignment="Left">
             <telerik:RadGridView
                 x:Name="SiglaBolsaGrid"
                 Grid.Row="1"
@@ -146,12 +148,15 @@
                 CanUserInsertRows="False"
                 ShowGroupPanel="False"
                 Width="435" 
-                HorizontalAlignment="Left" MouseDoubleClick="SiglaBolsaGrid_MouseDoubleClick">
+                Height="155"
+                HorizontalAlignment="Left" MouseDoubleClick="SiglaBolsaGrid_MouseDoubleClick" MultipleColumnSortModifiers="Shift">
                 <telerik:RadGridView.Columns>
                     <telerik:GridViewDataColumn Header="Sigla" DataMemberBinding="{Binding destino_shop}" Width="100"/>
                     <telerik:GridViewDataColumn Header="Bolsa" DataMemberBinding="{Binding descricao}" Width="*"/>
                 </telerik:RadGridView.Columns>
             </telerik:RadGridView>
+            <telerik:RadButton Content="Baixa em estoque" Click="OnBaixaEstoque" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+            </StackPanel>
             
 
             <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" >
@@ -166,10 +171,12 @@
 
                     <telerik:RadAutoSuggestBox
                         x:Name="txtCodProduto"
+                        IsEnabled="{Binding BolsaEditavel}"
                         KeyDown="OnBuscaProduto"
                         QueryButtonVisibility="Collapsed" 
                         Width="90"/>
                     <telerik:RadButton x:Name="btnAdicionarItem"
+                        IsEnabled="{Binding BolsaEditavel}"
                         Content="🔍" 
                         Margin="0,0,5,0"
                         Click="OnAdicionarItemClick"/>
@@ -179,6 +186,7 @@
                 </StackPanel>
 
                 <telerik:RadGridView
+                    x:Name="BolsaItensGrid"
                     Grid.Row="1"
                     Margin="5"
                     ItemsSource="{Binding BolsaItens}"
@@ -186,8 +194,10 @@
                     CanUserInsertRows="False"
                     ShowGroupPanel="False"
                     SelectionUnit="Cell"
+                    BeginningEdit="BolsaItens_BeginningEdit"
                     CellEditEnded="RadGridView_CellEditEnded">
                     <telerik:RadGridView.Columns>
+                        <telerik:GridViewDataColumn Header="Baixa estoque" IsReadOnly="True" DataMemberBinding="{Binding baixa_movimentacao}"/>
                         <telerik:GridViewDataColumn Header="#" IsReadOnly="True" DataMemberBinding="{Binding codcompladicional}"/>
                         <telerik:GridViewDataColumn Header="Planilha" IsReadOnly="True" DataMemberBinding="{Binding planilha}" Width="150"/>
                         <telerik:GridViewDataColumn Header="Descrição" IsReadOnly="True" DataMemberBinding="{Binding descricao_completa}" Width="*"/>
