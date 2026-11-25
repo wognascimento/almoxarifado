@@ -21,9 +21,9 @@ BEGIN
             RAISE EXCEPTION 'Item de bolsa ja baixado no estoque. Exclusao bloqueada.';
         END IF;
         -- Devolucoes continuam no fluxo Bolsa Entrada; os dados de saida sao imutaveis.
-        IF (to_jsonb(NEW) - ARRAY['retorno','data_retorno','quantidade_retorno','retorno_por','retorno_em'])
+        IF (to_jsonb(NEW) - ARRAY['retorno','data_retorno','quantidade_retorno','retorno_por','retorno_em','alterado_por','alterado_data'])
             IS DISTINCT FROM
-           (to_jsonb(OLD) - ARRAY['retorno','data_retorno','quantidade_retorno','retorno_por','retorno_em']) THEN
+           (to_jsonb(OLD) - ARRAY['retorno','data_retorno','quantidade_retorno','retorno_por','retorno_em','alterado_por','alterado_data']) THEN
             RAISE EXCEPTION 'Item de bolsa ja baixado no estoque. Alteracao bloqueada.';
         END IF;
     END IF;

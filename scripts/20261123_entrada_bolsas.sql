@@ -20,9 +20,9 @@ RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
     IF TG_OP <> 'INSERT' AND OLD.baixa_movimentacao IS NOT NULL THEN
         IF TG_OP = 'DELETE' THEN RAISE EXCEPTION 'Item de bolsa ja baixado. Exclusao bloqueada.'; END IF;
-        IF (to_jsonb(NEW) - ARRAY['retorno','data_retorno','quantidade_retorno','retorno_por','retorno_em','entrada_estoque_qtde'])
+        IF (to_jsonb(NEW) - ARRAY['retorno','data_retorno','quantidade_retorno','retorno_por','retorno_em','entrada_estoque_qtde','alterado_por','alterado_data'])
             IS DISTINCT FROM
-           (to_jsonb(OLD) - ARRAY['retorno','data_retorno','quantidade_retorno','retorno_por','retorno_em','entrada_estoque_qtde']) THEN
+           (to_jsonb(OLD) - ARRAY['retorno','data_retorno','quantidade_retorno','retorno_por','retorno_em','entrada_estoque_qtde','alterado_por','alterado_data']) THEN
             RAISE EXCEPTION 'Item de bolsa ja baixado. Alteracao bloqueada.';
         END IF;
     END IF;

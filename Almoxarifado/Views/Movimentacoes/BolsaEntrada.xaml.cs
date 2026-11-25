@@ -11,6 +11,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 using Telerik.Windows.Controls;
 using Telerik.Windows.Controls.GridView;
 
@@ -208,16 +209,21 @@ public partial class BolsaEntrada : UserControl
             case "Qtde Retorno":
                 //AtualizarQuantidade(itemBeingEdited, e.NewData);
                 _salvandoRetorno = true;
-                MainContent.IsEnabled = false;
-                string? erroQtde;
-                try { erroQtde = await vm.AlterarItemBolsaAsync(itemBeingEdited); }
-                finally { _salvandoRetorno = false; MainContent.IsEnabled = true; }
-                if (!string.IsNullOrEmpty(erroQtde))
+                var valorAnterior = e.OldData;
+                MainContent.IsHitTestVisible = false;
+                try
                 {
-                    itemBeingEdited.quantidade_retorno = e.OldData == null ? null : Convert.ToDouble(e.OldData);
-                    gridView.Rebind();
-                    erros.Add(erroQtde);
+                    // Finaliza o ciclo de edicao do Telerik antes de gravar ou atualizar o grid.
+                    await Dispatcher.Yield(DispatcherPriority.Background);
+                    var erroQtde = await vm.AlterarItemBolsaAsync(itemBeingEdited);
+                    if (!string.IsNullOrEmpty(erroQtde))
+                    {
+                        itemBeingEdited.quantidade_retorno = valorAnterior == null ? null : Convert.ToDouble(valorAnterior);
+                        gridView.Rebind();
+                        erros.Add(erroQtde);
+                    }
                 }
+                finally { MainContent.IsHitTestVisible = true; _salvandoRetorno = false; }
                 break;
         }
 
@@ -227,6 +233,11 @@ public partial class BolsaEntrada : UserControl
             MessageBox.Show(string.Join("\n\n", erros), "Erro ao carregar dados", MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
+    }
+
+    private void BolsaItensGrid_BeginningEdit(object sender, GridViewBeginningEditRoutedEventArgs e)
+    {
+        if (_salvandoRetorno || _abrindoEntrada) e.Cancel = true;
     }
 
     private void ModalOverlay_MouseDown(object sender, MouseButtonEventArgs e)

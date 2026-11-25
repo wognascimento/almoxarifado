@@ -149,6 +149,7 @@
                     CanUserInsertRows="False"
                     ShowGroupPanel="False"
                     SelectionUnit="Cell"
+                    BeginningEdit="BolsaItensGrid_BeginningEdit"
                     CellEditEnded="RadGridView_CellEditEnded">
                     <telerik:RadGridView.Columns>
                         <telerik:GridViewDataColumn Header="#" IsReadOnly="True" DataMemberBinding="{Binding codcompladicional}"/>
